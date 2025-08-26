@@ -1,9 +1,8 @@
 const express = require("express");
 const session = require("express-session");
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Set your password
 const PASSWORD = "1234"; // change this to your desired password
@@ -13,26 +12,28 @@ app.use(express.json());
 
 // Setup session
 app.use(session({
-  secret: "rent-secret-key", // change this to a random secret
+  secret: "rent-secret-key",
   resave: false,
   saveUninitialized: true
 }));
 
-// Path for data folder and file
-const dataFolder = path.join(__dirname, "data");
-const dataFile = path.join(dataFolder, "payments.json");
+// ✅ Connect to MongoDB Atlas
+const mongoURL = "<YOUR_MONGODB_CONNECTION_STRING>"; // replace with your Atlas connection string
+mongoose.connect(mongoURL, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.log("❌ MongoDB connection error:", err));
 
-if (!fs.existsSync(dataFolder)) {
-  fs.mkdirSync(dataFolder);
-}
+// ✅ Payment schema & model
+const paymentSchema = new mongoose.Schema({
+  name: String,
+  amount: Number
+});
+const Payment = mongoose.model("Payment", paymentSchema);
 
 // Middleware to protect routes
 function authMiddleware(req, res, next) {
-  if (req.session && req.session.loggedIn) {
-    next();
-  } else {
-    res.redirect("/");
-  }
+  if (req.session && req.session.loggedIn) next();
+  else res.redirect("/");
 }
 
 // ✅ Login page
@@ -51,14 +52,14 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
   const { password } = req.body;
   if (password === PASSWORD) {
-    req.session.loggedIn = true; // mark user as logged in
+    req.session.loggedIn = true;
     res.redirect("/dashboard");
   } else {
     res.send("❌ Wrong password! <br><a href='/'>Go Back</a>");
   }
 });
 
-// ✅ Dashboard: Payment form (protected)
+// ✅ Dashboard: add payment
 app.get("/dashboard", authMiddleware, (req, res) => {
   res.send(`
     <h1>Rent Management System</h1>
@@ -76,48 +77,31 @@ app.get("/dashboard", authMiddleware, (req, res) => {
   `);
 });
 
-// ✅ Save payment (protected)
-app.post("/save", authMiddleware, (req, res) => {
+// ✅ Save payment
+app.post("/save", authMiddleware, async (req, res) => {
   const { name, amount } = req.body;
-  let payments = [];
-
-  if (fs.existsSync(dataFile)) {
-    payments = JSON.parse(fs.readFileSync(dataFile));
-  }
-
-  payments.push({ name, amount });
-  fs.writeFileSync(dataFile, JSON.stringify(payments, null, 2));
-
+  const payment = new Payment({ name, amount });
+  await payment.save();
   res.send("Payment saved successfully! <br><a href='/dashboard'>Go Back</a>");
 });
 
-// ✅ View payments (protected)
-app.get("/payments", authMiddleware, (req, res) => {
-  let payments = [];
-  if (fs.existsSync(dataFile)) {
-    payments = JSON.parse(fs.readFileSync(dataFile));
-  }
-
+// ✅ View all payments
+app.get("/payments", authMiddleware, async (req, res) => {
+  const payments = await Payment.find();
   let html = "<h2>All Payments</h2><ul>";
-  payments.forEach((p, index) => {
+  payments.forEach(p => {
     html += `<li><strong>${p.name}</strong> paid <strong>${p.amount}</strong> 
-      <a href="/delete/${index}" onclick="return confirm('Delete this payment?')">Delete</a>
+      <a href="/delete/${p._id}" onclick="return confirm('Delete this payment?')">Delete</a>
     </li>`;
   });
   html += "</ul><br><a href='/dashboard'>Add New Payment</a>";
   res.send(html);
 });
 
-// ✅ Delete payment (protected)
-app.get("/delete/:id", authMiddleware, (req, res) => {
-  const id = parseInt(req.params.id);
-  if (fs.existsSync(dataFile)) {
-    let payments = JSON.parse(fs.readFileSync(dataFile));
-    if (id >= 0 && id < payments.length) {
-      payments.splice(id, 1);
-      fs.writeFileSync(dataFile, JSON.stringify(payments, null, 2));
-    }
-  }
+// ✅ Delete payment
+app.get("/delete/:id", authMiddleware, async (req, res) => {
+  const id = req.params.id;
+  await Payment.findByIdAndDelete(id);
   res.redirect("/payments");
 });
 
@@ -128,6 +112,6 @@ app.get("/logout", (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
 });
