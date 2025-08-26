@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rent Management</title>
+</head>
+<body>
+  <h1>Rent Management System</h1>
+
+  <form id="rentForm">
+    <label>Name: <input type="text" id="name" required></label><br><br>
+    <label>Amount Paid: <input type="number" id="amount" required></label><br><br>
+    <button type="submit">Save</button>
+  </form>
+
+  <h2>Payments</h2>
+  <ul id="payments"></ul>
+
+  <script>
+    async function loadPayments() {
+      let res = await fetch('/api/payments');
+      let data = await res.json();
+      let list = document.getElementById('payments');
+      list.innerHTML = '';
+      data.forEach(p => {
+        let li = document.createElement('li');
+        li.textContent = p.name + ' - ' + p.amount;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('rentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      let name = document.getElementById('name').value;
+      let amount = document.getElementById('amount').value;
+
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, amount })
+      });
+
+      loadPayments();
+    });
+
+    loadPayments();
+  </script>
+</body>
+</html>
