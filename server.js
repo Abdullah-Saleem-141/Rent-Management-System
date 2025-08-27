@@ -18,20 +18,22 @@ const MONGO_URL = process.env.MONGO_URL;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// A simple route to test if the server is running
-app.get('/test', (req, res) => {
-    res.send('Server is alive!');
+// ✅ Health check route for Railway
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
 });
 
 // ✅ Session with MongoDB store
+const sessionStore = MongoStore.create({
+    mongoUrl: MONGO_URL,
+    collectionName: "sessions"
+});
+
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: MONGO_URL,
-        collectionName: "sessions"
-    }),
+    store: sessionStore,
     cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 day
 }));
 
