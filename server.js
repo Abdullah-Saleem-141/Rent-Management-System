@@ -42,10 +42,20 @@ mongoose.connect(MONGO_URL)
     .then(() => {
         console.log("✅ MongoDB connected");
 
+        // ✅ User Schema (new)
+        const userSchema = new mongoose.Schema({
+            name: String,
+            location: String,
+            fixedFare: Number,
+            isPaid: Boolean
+        });
+        const User = mongoose.model("User", userSchema);
+
         // ✅ Payment Schema
         const paymentSchema = new mongoose.Schema({
-            name: String,
-            amount: Number
+            userId: mongoose.Schema.Types.ObjectId,
+            amount: Number,
+            date: { type: Date, default: Date.now } // Automatically set date
         });
         const Payment = mongoose.model("Payment", paymentSchema);
 
@@ -56,6 +66,8 @@ mongoose.connect(MONGO_URL)
         }
 
         // ✅ Routes
+
+        // Login page
         app.get("/", (req, res) => {
             res.send(`
                 <h1>Rent Management Login</h1>
@@ -67,6 +79,7 @@ mongoose.connect(MONGO_URL)
             `);
         });
 
+        // Handle login
         app.post("/login", (req, res) => {
             const { password } = req.body;
             if (password === PASSWORD) {
@@ -77,29 +90,42 @@ mongoose.connect(MONGO_URL)
             }
         });
 
-        app.get("/dashboard", authMiddleware, (req, res) => {
+        // Dashboard
+        app.get("/dashboard", authMiddleware, async (req, res) => {
+            const users = await User.find();
+            let userOptions = users.map(user => `<option value="${user._id}">${user.name} - ${user.location}</option>`).join('');
             res.send(`
                 <h1>Rent Management System</h1>
-                <form action="/save" method="post">
-                <label>Name:</label>
-                <input type="text" name="name" required /><br><br>
-                <label>Amount Paid:</label>
-                <input type="number" name="amount" required /><br><br>
-                <button type="submit">Save</button>
+                <h2>Record a Payment</h2>
+                <form action="/save-payment" method="post">
+                    <label for="userSelect">User:</label>
+                    <select name="userId" id="userSelect" required>
+                        ${userOptions}
+                    </select><br><br>
+                    <label>Amount Paid:</label>
+                    <input type="number" name="amount" required /><br><br>
+                    <button type="submit">Save Payment</button>
                 </form>
                 <br>
-                <a href="/payments">View All Payments</a>
+                <a href="/users">View All Users</a>
+                <br><br>
+                <a href="/reports">View Monthly Reports</a>
                 <br><br>
                 <a href="/logout">Logout</a>
             `);
         });
 
-        app.post("/save", authMiddleware, async (req, res) => {
+        // Save a new payment (new route)
+        app.post("/save-payment", authMiddleware, async (req, res) => {
             try {
-                const { name, amount } = req.body;
-                if (!name || !amount) return res.send("❌ Name and amount required");
-                const payment = new Payment({ name, amount });
+                const { userId, amount } = req.body;
+                if (!userId || !amount) return res.send("❌ User and amount required");
+
+                const payment = new Payment({ userId, amount });
                 await payment.save();
+
+                await User.findByIdAndUpdate(userId, { isPaid: true });
+
                 res.send("Payment saved successfully! <br><a href='/dashboard'>Go Back</a>");
             } catch (err) {
                 console.error(err);
@@ -107,32 +133,55 @@ mongoose.connect(MONGO_URL)
             }
         });
 
-        app.get("/payments", authMiddleware, async (req, res) => {
+        // View all users (new route)
+        app.get("/users", authMiddleware, async (req, res) => {
             try {
-                const payments = await Payment.find();
-                let html = "<h2>All Payments</h2><ul>";
-                payments.forEach(p => {
-                    html += `<li><strong>${p.name}</strong> paid <strong>${p.amount}</strong> 
-                        <a href="/delete/${p._id}" onclick="return confirm('Delete this payment?')">Delete</a>
-                    </li>`;
+                const users = await User.find();
+                let html = "<h2>All Users</h2><ul>";
+                users.forEach(user => {
+                    html += `<li><strong>${user.name}</strong> (${user.location}) - Fixed Fare: <strong>${user.fixedFare}</strong>`;
+                    html += user.isPaid ? ' - <span style="color: green;">Paid</span>' : ' - <span style="color: red;">Unpaid</span>';
+                    html += `</li>`;
                 });
-                html += "</ul><br><a href='/dashboard'>Add New Payment</a>";
+                html += "</ul><br><a href='/dashboard'>Record New Payment</a>";
                 res.send(html);
             } catch (err) {
                 console.error(err);
-                res.send("❌ Error fetching payments");
+                res.send("❌ Error fetching users");
             }
         });
 
-        app.get("/delete/:id", authMiddleware, async (req, res) => {
+        // Monthly reports (new route)
+        app.get("/reports", authMiddleware, async (req, res) => {
             try {
-                await Payment.findByIdAndDelete(req.params.id);
+                const today = new Date();
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+                const totalCollected = await Payment.aggregate([
+                    { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
+                    { $group: { _id: null, total: { $sum: "$amount" } } }
+                ]);
+
+                const unpaidUsers = await User.find({ isPaid: false });
+
+                let html = "<h2>Monthly Report</h2>";
+                html += `<h3>Total Collected this Month: ${totalCollected[0] ? totalCollected[0].total : 0}</h3>`;
+                html += `<h3>Users Remaining to Pay:</h3>`;
+                html += "<ul>";
+                unpaidUsers.forEach(user => {
+                    html += `<li>${user.name} (${user.location})</li>`;
+                });
+                html += "</ul><br><a href='/dashboard'>Go Back to Dashboard</a>";
+                res.send(html);
+
             } catch (err) {
                 console.error(err);
+                res.send("❌ Error fetching reports");
             }
-            res.redirect("/payments");
         });
 
+        // Logout
         app.get("/logout", (req, res) => {
             req.session.destroy(err => {
                 if (err) console.error(err);
@@ -140,6 +189,21 @@ mongoose.connect(MONGO_URL)
             });
         });
 
+        // TEMPORARY: Route to add initial users
+app.get("/add-users", authMiddleware, async (req, res) => {
+  try {
+    const usersToAdd = [
+      { name: "User One", location: "Location A", fixedFare: 100, isPaid: false },
+      { name: "User Two", location: "Location B", fixedFare: 150, isPaid: false },
+      { name: "User Three", location: "Location C", fixedFare: 200, isPaid: false }
+    ];
+    await User.insertMany(usersToAdd);
+    res.send("Initial users added successfully!");
+  } catch (err) {
+    console.error(err);
+    res.send("Error adding users");
+  }
+});
         // Start server only after a successful database connection
         app.listen(PORT, "0.0.0.0", () => {
             console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
@@ -148,6 +212,5 @@ mongoose.connect(MONGO_URL)
     })
     .catch(err => {
         console.log("❌ MongoDB connection error:", err);
-        // Exit the process with an error code if the database connection fails
         process.exit(1);
     });
