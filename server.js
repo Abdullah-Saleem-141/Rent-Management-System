@@ -15,6 +15,9 @@ const PASSWORD = process.env.PASSWORD || "1234";
 const SESSION_SECRET = process.env.SESSION_SECRET || "rent-secret-key";
 const MONGO_URL = process.env.MONGO_URL;
 
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -70,12 +73,23 @@ mongoose.connect(MONGO_URL)
         // Login page
         app.get("/", (req, res) => {
             res.send(`
-                <h1>Rent Management Login</h1>
-                <form action="/login" method="post">
-                <label>Password:</label>
-                <input type="password" name="password" required />
-                <button type="submit">Login</button>
-                </form>
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Login</title>
+                    <link rel="stylesheet" href="/css/style.css">
+                </head>
+                <body>
+                    <h1>Rent Management Login</h1>
+                    <form action="/login" method="post">
+                        <label>Password:</label>
+                        <input type="password" name="password" required />
+                        <button type="submit">Login</button>
+                    </form>
+                </body>
+                </html>
             `);
         });
 
@@ -95,23 +109,34 @@ mongoose.connect(MONGO_URL)
             const users = await User.find();
             let userOptions = users.map(user => `<option value="${user._id}">${user.name} - ${user.location}</option>`).join('');
             res.send(`
-                <h1>Rent Management System</h1>
-                <h2>Record a Payment</h2>
-                <form action="/save-payment" method="post">
-                    <label for="userSelect">User:</label>
-                    <select name="userId" id="userSelect" required>
-                        ${userOptions}
-                    </select><br><br>
-                    <label>Amount Paid:</label>
-                    <input type="number" name="amount" required /><br><br>
-                    <button type="submit">Save Payment</button>
-                </form>
-                <br>
-                <a href="/users">View All Users</a>
-                <br><br>
-                <a href="/reports">View Monthly Reports</a>
-                <br><br>
-                <a href="/logout">Logout</a>
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Dashboard</title>
+                    <link rel="stylesheet" href="/css/style.css">
+                </head>
+                <body>
+                    <h1>Rent Management System</h1>
+                    <h2>Record a Payment</h2>
+                    <form action="/save-payment" method="post">
+                        <label for="userSelect">User:</label>
+                        <select name="userId" id="userSelect" required>
+                            ${userOptions}
+                        </select><br><br>
+                        <label>Amount Paid:</label>
+                        <input type="number" name="amount" required /><br><br>
+                        <button type="submit">Save Payment</button>
+                    </form>
+                    <br>
+                    <a href="/users">View All Users</a>
+                    <br><br>
+                    <a href="/reports">View Monthly Reports</a>
+                    <br><br>
+                    <a href="/logout">Logout</a>
+                </body>
+                </html>
             `);
         });
 
@@ -137,13 +162,24 @@ mongoose.connect(MONGO_URL)
         app.get("/users", authMiddleware, async (req, res) => {
             try {
                 const users = await User.find();
-                let html = "<h2>All Users</h2><ul>";
+                let html = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>All Users</title>
+                        <link rel="stylesheet" href="/css/style.css">
+                    </head>
+                    <body>
+                        <h2>All Users</h2>
+                        <ul>`;
                 users.forEach(user => {
                     html += `<li><strong>${user.name}</strong> (${user.location}) - Fixed Fare: <strong>${user.fixedFare}</strong>`;
                     html += user.isPaid ? ' - <span style="color: green;">Paid</span>' : ' - <span style="color: red;">Unpaid</span>';
                     html += `</li>`;
                 });
-                html += "</ul><br><a href='/dashboard'>Record New Payment</a>";
+                html += "</ul><br><a href='/dashboard'>Record New Payment</a></body></html>";
                 res.send(html);
             } catch (err) {
                 console.error(err);
@@ -165,14 +201,24 @@ mongoose.connect(MONGO_URL)
 
                 const unpaidUsers = await User.find({ isPaid: false });
 
-                let html = "<h2>Monthly Report</h2>";
+                let html = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Monthly Report</title>
+                        <link rel="stylesheet" href="/css/style.css">
+                    </head>
+                    <body>
+                        <h2>Monthly Report</h2>`;
                 html += `<h3>Total Collected this Month: ${totalCollected[0] ? totalCollected[0].total : 0}</h3>`;
                 html += `<h3>Users Remaining to Pay:</h3>`;
                 html += "<ul>";
                 unpaidUsers.forEach(user => {
                     html += `<li>${user.name} (${user.location})</li>`;
                 });
-                html += "</ul><br><a href='/dashboard'>Go Back to Dashboard</a>";
+                html += "</ul><br><a href='/dashboard'>Go Back to Dashboard</a></body></html>";
                 res.send(html);
 
             } catch (err) {
@@ -190,20 +236,21 @@ mongoose.connect(MONGO_URL)
         });
 
         // TEMPORARY: Route to add initial users
-app.get("/add-users", authMiddleware, async (req, res) => {
-  try {
-    const usersToAdd = [
-      { name: "User One", location: "Location A", fixedFare: 100, isPaid: false },
-      { name: "User Two", location: "Location B", fixedFare: 150, isPaid: false },
-      { name: "User Three", location: "Location C", fixedFare: 200, isPaid: false }
-    ];
-    await User.insertMany(usersToAdd);
-    res.send("Initial users added successfully!");
-  } catch (err) {
-    console.error(err);
-    res.send("Error adding users");
-  }
-});
+        app.get("/add-users", authMiddleware, async (req, res) => {
+            try {
+                const usersToAdd = [
+                    { name: "User One", location: "Location A", fixedFare: 100, isPaid: false },
+                    { name: "User Two", location: "Location B", fixedFare: 150, isPaid: false },
+                    { name: "User Three", location: "Location C", fixedFare: 200, isPaid: false }
+                ];
+                await User.insertMany(usersToAdd);
+                res.send("Initial users added successfully!");
+            } catch (err) {
+                console.error(err);
+                res.send("Error adding users");
+            }
+        });
+
         // Start server only after a successful database connection
         app.listen(PORT, "0.0.0.0", () => {
             console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
