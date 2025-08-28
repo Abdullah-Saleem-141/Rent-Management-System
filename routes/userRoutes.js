@@ -136,12 +136,95 @@ router.post("/add-user", authMiddleware, async (req, res) => {
     }
 });
 
+// Route to delete a user
+router.post("/delete-user/:id", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        await User.findByIdAndDelete(id);
+        res.send("User deleted successfully! <br><a href='/users'>Go Back to Users List</a>");
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error deleting user." });
+    }
+});
+
+// Route to display the Edit User form with pre-filled data
+router.get("/edit-user/:id", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).render('error', { message: "User not found." });
+        }
+        res.render('edit-user', { user: user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error fetching user data." });
+    }
+});
+
+// Route to handle form submission and update the user in the database
+router.post("/edit-user/:id", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, location, fixedFare, isPaid } = req.body;
+        
+        await User.findByIdAndUpdate(id, {
+            name,
+            location,
+            fixedFare,
+            isPaid: !!isPaid // Convert 'on' or undefined to a boolean
+        });
+
+        res.send("User updated successfully! <br><a href='/users'>Go Back to Users List</a>");
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error updating user." });
+    }
+});
+
 // Logout
 router.get("/logout", (req, res) => {
     req.session.destroy(err => {
         if (err) console.error(err);
         res.redirect("/");
     });
+});
+
+// Route to view payment history for a specific user
+router.get("/payments/:id", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        const payments = await Payment.find({ userId: id }).sort({ date: -1 });
+        
+        const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+        if (!user) {
+            return res.status(404).render('error', { message: "User not found." });
+        }
+        
+        res.render('payments', {
+            user: user,
+            payments: payments,
+            totalPaid: totalPaid
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error fetching payment history." });
+    }
+});
+
+// Route to delete a payment
+router.post("/delete-payment/:id", authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Payment.findByIdAndDelete(id);
+        res.send("Payment deleted successfully! <br><a href='/users'>Go Back to Users List</a>");
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error deleting payment." });
+    }
 });
 
 module.exports = router;
