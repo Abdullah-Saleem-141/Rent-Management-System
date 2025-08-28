@@ -12,7 +12,8 @@ const userRoutes = require("./routes/userRoutes"); // Import the new routes file
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "rent-secret-key";
+// Remove hardcoded credentials, use only what is in .env file
+const SESSION_SECRET = process.env.SESSION_SECRET;
 const MONGO_URL = process.env.MONGO_URL;
 
 // Set EJS as the view engine
@@ -62,3 +63,5 @@ mongoose.connect(MONGO_URL)
         console.log("❌ MongoDB connection error:", err);
         process.exit(1);
     });
+
+    // dhhdhhdhd
