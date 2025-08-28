@@ -63,5 +63,3 @@ mongoose.connect(MONGO_URL)
         console.log("❌ MongoDB connection error:", err);
         process.exit(1);
     });
-
-    // dhhdhhdhd
