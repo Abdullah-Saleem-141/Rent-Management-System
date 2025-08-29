@@ -8,6 +8,7 @@ const express = require("express");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const MongoStore = require("connect-mongo");
+const compression = require('compression'); // <-- ADD THIS LINE
 const userRoutes = require("./routes/userRoutes"); // Import the new routes file
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,10 +22,11 @@ app.set('view engine', 'ejs');
 app.set('views', './Views');
 
 // Serve static files from the 'public' directory
-app.use(express.static('public'));
+app.use(express.static('public', { maxAge: '1d' }));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(compression()); // <-- AND ADD THIS LINE
 
 // ✅ Health check route for Railway
 app.get('/health', (req, res) => {

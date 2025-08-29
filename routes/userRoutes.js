@@ -56,7 +56,7 @@ router.post("/login", async (req, res) => {
 
 // Dashboard
 router.get("/dashboard", authMiddleware, async (req, res) => {
-    const users = await User.find();
+    const users = await User.find().lean();
     res.render('dashboard', { users: users });
 });
 
@@ -82,7 +82,7 @@ router.post("/save-payment", authMiddleware, async (req, res) => {
 // View all users
 router.get("/users", authMiddleware, async (req, res) => {
     try {
-        const users = await User.find();
+        const users = await User.find().lean();
         res.render('users', { users: users });
     } catch (err) {
         console.error(err);
