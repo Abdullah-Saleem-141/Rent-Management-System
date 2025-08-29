@@ -2,57 +2,22 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const router = express.Router();
+const { Parser } = require('json2csv');
 
-// ✅ User Schema
-const userSchema = new mongoose.Schema({
-    name: String,
-    location: String,
-    fixedFare: Number,
-    isPaid: Boolean
-});
-const User = mongoose.model("User", userSchema);
+// Import all models from the new 'models' directory
+const User = require('../models/User');
+const Payment = require('../models/Payment');
+const Location = require('../models/Location');
 
-// ✅ Payment Schema
-const paymentSchema = new mongoose.Schema({
-    userId: mongoose.Schema.Types.ObjectId,
-    amount: Number,
-    date: { type: Date, default: Date.now }
-});
-const Payment = mongoose.model("Payment", paymentSchema);
-
-// ✅ Auth Middleware
+// ✅ Auth Middleware (moved from the old schema section)
 function authMiddleware(req, res, next) {
     if (req.session && req.session.loggedIn) next();
     else res.redirect("/");
 }
+router.use(authMiddleware);
 
-// ✅ Routes
 
-// Login page
-router.get("/", (req, res) => {
-    res.render('login');
-});
-
-// Handle login
-router.post("/login", async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        if (username === "saleem cables") {
-            const isMatch = await bcrypt.compare(password, process.env.PASSWORD);
-            if (isMatch) {
-                req.session.loggedIn = true;
-                res.redirect("/dashboard");
-            } else {
-                res.render('error', { message: "Wrong username or password!" });
-            }
-        } else {
-            res.render('error', { message: "Wrong username or password!" });
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).render('error', { message: "An error occurred during login." });
-    }
-});
+// ALL YOUR EXISTING ROUTES START HERE (UNCHANGED)
 
 // Dashboard
 router.get("/dashboard", authMiddleware, async (req, res) => {
@@ -72,17 +37,26 @@ router.post("/save-payment", authMiddleware, async (req, res) => {
         await payment.save();
         await User.findByIdAndUpdate(userId, { isPaid: true });
 
-        res.send("Payment saved successfully! <br><a href='/dashboard'>Go Back</a>");
+        req.flash('success_msg', 'Payment saved successfully!');
+        res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error saving payment" });
     }
 });
 
-// View all users
+// View all users with pagination
 router.get("/users", authMiddleware, async (req, res) => {
     try {
-        const users = await User.find().lean();
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const options = {
+            page: page,
+            limit: limit,
+            lean: true
+        };
+
+        const users = await User.paginate({}, options);
         res.render('users', { users: users });
     } catch (err) {
         console.error(err);
@@ -97,16 +71,23 @@ router.get("/reports", authMiddleware, async (req, res) => {
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-        const totalCollected = await Payment.aggregate([
+        // Get total collected amount
+        const totalCollectedResult = await Payment.aggregate([
             { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
+        const totalCollected = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
 
-        const unpaidUsers = await User.find({ isPaid: false });
+        // Get unpaid users
+        const unpaidUsers = await User.find({ isPaid: false }).lean();
+
+        // Calculate the total fare of unpaid users
+        const totalUnpaid = unpaidUsers.reduce((sum, user) => sum + user.fixedFare, 0);
 
         res.render('reports', {
-            totalCollected: totalCollected[0] ? totalCollected[0].total : 0,
-            unpaidUsers: unpaidUsers
+            totalCollected: totalCollected,
+            unpaidUsers: unpaidUsers,
+            totalUnpaid: totalUnpaid // Pass the new data to the template
         });
 
     } catch (err) {
@@ -116,10 +97,16 @@ router.get("/reports", authMiddleware, async (req, res) => {
 });
 
 // Route to display the Add User form
-router.get("/add-user", authMiddleware, (req, res) => {
-    res.render('add-user');
+router.get("/add-user", async (req, res) => {
+    try {
+        const locations = await Location.find().sort({ name: 'asc' }).lean();
+        res.render('add-user', { locations: locations, title: 'Add New Customer' });
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error loading the page.');
+        res.redirect('/dashboard');
+    }
 });
-
 // Route to handle form submission and save a new user
 router.post("/add-user", authMiddleware, async (req, res) => {
     try {
@@ -129,7 +116,8 @@ router.post("/add-user", authMiddleware, async (req, res) => {
         }
         const newUser = new User({ name, location, fixedFare, isPaid: false });
         await newUser.save();
-        res.send("User added successfully! <br><a href='/dashboard'>Go Back to Dashboard</a>");
+        req.flash('success_msg', 'User added successfully!');
+        res.redirect('/users');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error adding user." });
@@ -141,7 +129,8 @@ router.post("/delete-user/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         await User.findByIdAndDelete(id);
-        res.send("User deleted successfully! <br><a href='/users'>Go Back to Users List</a>");
+        req.flash('success_msg', 'User deleted successfully!');
+        res.redirect('/users');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error deleting user." });
@@ -168,7 +157,7 @@ router.post("/edit-user/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const { name, location, fixedFare, isPaid } = req.body;
-        
+
         await User.findByIdAndUpdate(id, {
             name,
             location,
@@ -176,19 +165,12 @@ router.post("/edit-user/:id", authMiddleware, async (req, res) => {
             isPaid: !!isPaid // Convert 'on' or undefined to a boolean
         });
 
-        res.send("User updated successfully! <br><a href='/users'>Go Back to Users List</a>");
+        req.flash('success_msg', 'User updated successfully!');
+        res.redirect('/users');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error updating user." });
     }
-});
-
-// Logout
-router.get("/logout", (req, res) => {
-    req.session.destroy(err => {
-        if (err) console.error(err);
-        res.redirect("/");
-    });
 });
 
 // Route to view payment history for a specific user
@@ -197,13 +179,13 @@ router.get("/payments/:id", authMiddleware, async (req, res) => {
         const { id } = req.params;
         const user = await User.findById(id);
         const payments = await Payment.find({ userId: id }).sort({ date: -1 });
-        
+
         const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
         if (!user) {
             return res.status(404).render('error', { message: "User not found." });
         }
-        
+
         res.render('payments', {
             user: user,
             payments: payments,
@@ -220,10 +202,52 @@ router.post("/delete-payment/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         await Payment.findByIdAndDelete(id);
-        res.send("Payment deleted successfully! <br><a href='/users'>Go Back to Users List</a>");
+        req.flash('success_msg', 'Payment deleted successfully!');
+        res.redirect('/users');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error deleting payment." });
+    }
+});
+
+// Route to download the monthly report as a CSV file
+router.get("/download-report", authMiddleware, async (req, res) => {
+    try {
+        const unpaidUsers = await User.find({ isPaid: false }).lean();
+
+        if (unpaidUsers.length === 0) {
+            req.flash('error_msg', 'There are no unpaid users to export.');
+            return res.redirect('/reports');
+        }
+
+        const fields = ['name', 'location', 'fixedFare'];
+        const opts = { fields };
+        const parser = new Parser(opts);
+        const csv = parser.parse(unpaidUsers);
+
+        res.header('Content-Type', 'text/csv');
+        res.attachment('unpaid-users-report.csv');
+        res.send(csv);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error generating report" });
+    }
+});
+
+// Route to mark all users as unpaid
+router.post("/mark-all-unpaid", authMiddleware, async (req, res) => {
+    try {
+        // Update all documents in the User collection
+        await User.updateMany({}, { $set: { isPaid: false } });
+
+        // Send a success message and redirect
+        req.flash('success_msg', 'All users have been marked as unpaid.');
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error(err);
+        req.flash('error_msg', 'Error updating users. Please try again.');
+        res.redirect('/dashboard');
     }
 });
 

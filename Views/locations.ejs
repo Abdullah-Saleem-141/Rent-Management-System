@@ -1,0 +1,33 @@
+<%- include('partials/header', { title: 'Manage Locations' }) %>
+<%- include('partials/messages') %>
+
+<div class="content-section">
+    <h2>Add New Location</h2>
+    <form action="/locations/add" method="post">
+        <div class="form-group">
+            <label for="name" class="required">Location Name:</label>
+            <input type="text" id="name" name="name" required />
+        </div>
+        <button type="submit" class="btn">Add Location</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <h2>Existing Locations</h2>
+    <ul class="user-list">
+        <% if (locations && locations.length > 0) { %>
+            <% locations.forEach(location => { %>
+                <li>
+                    <span><strong><%= location.name %></strong></span>
+                    <form action="/locations/delete/<%= location._id %>" method="post" onsubmit="return confirm('Are you sure you want to delete this location?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </li>
+            <% }); %>
+        <% } else { %>
+            <p>No locations have been added yet.</p>
+        <% } %>
+    </ul>
+</div>
+
+<%- include('partials/footer') %>

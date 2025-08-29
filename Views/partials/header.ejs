@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Rent Management' %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <% if (typeof chartjs !== 'undefined' && chartjs) { %>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <% } %>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content">
+            <a href="/dashboard" class="header-brand">Saleem Cables</a>
+            <nav class="main-nav">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/users">All Users</a>
+                <a href="/locations">Manage Locations</a>
+                <a href="/reports">Reports</a>
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </nav>
+        </div>
+    </header>
+    <div class="main-container">

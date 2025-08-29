@@ -1,11 +1,22 @@
 /* ====================================
    General Styling
    ==================================== */
+:root {
+    --primary-color: #4CAF50; /* Green */
+    --secondary-color: #007bff; /* Blue */
+    --danger-color: #e57373; /* Light Red */
+    --danger-hover: #d32f2f; /* Darker Red */
+    --light-grey: #f7f7f7;
+    --text-color: #333;
+    --border-color: #ddd;
+}
+
 body {
     background-color: #f0f2f5;
     font-family: Arial, sans-serif;
     margin: 0;
     line-height: 1.6;
+    color: var(--text-color);
 }
 
 /* ====================================
@@ -13,24 +24,20 @@ body {
    ==================================== */
 
 .login-container {
-    background-color: #ffffff;
-    padding: 30px;
+    background-color: var(--light-grey); /* Using light grey variable */
+    padding: 40px;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     text-align: center;
-    width: 350px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* Center the login container on the page */
+    width: 380px;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
 
-h1 {
-    color: #4CAF50; /* A new color for the heading */
+.login-container h1 {
+    color: var(--primary-color);
     margin-bottom: 10px;
 }
 
@@ -39,14 +46,14 @@ h1 {
 }
 
 .logo {
-    width: 100px; /* Adjust size as needed */
+    width: 100px;
     height: 100px;
-    border-radius: 50%; /* Makes the image circular */
+    border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #ddd;
+    border: 2px solid var(--border-color);
 }
 
-h2 {
+.login-container h2 {
     color: #757575;
     margin-top: 0;
     margin-bottom: 20px;
@@ -66,15 +73,15 @@ h2 {
 
 .login-form input[type="text"],
 .login-form input[type="password"] {
-    padding: 10px;
-    border: 1px solid black; /* Changes border to black */
+    padding: 12px;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     width: 100%;
     box-sizing: border-box;
 }
 
 .btn-login {
-    background-color: #e57373;
+    background-color: var(--danger-color);
     color: white;
     padding: 12px 20px;
     border: none;
@@ -82,77 +89,412 @@ h2 {
     cursor: pointer;
     font-size: 16px;
     width: 100%;
+    transition: background-color 0.3s;
 }
 
 .btn-login:hover {
-    background-color: #d32f2f;
+    background-color: var(--danger-hover);
 }
 
 /* ====================================
-   Internal Page Styling (Dashboard)
+   Internal Page Styling
    ==================================== */
 
 .app-header {
     text-align: center;
-    margin-top: 20px;
-    color: #4CAF50; /* A new color for the heading */
+    padding: 20px;
+    background-color: white;
+    border-bottom: 1px solid var(--border-color);
 }
 
-/* Layout for the main content area */
-.dashboard-container {
+.app-header h1 {
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.main-container {
     display: flex;
-    flex-direction: column; /* Main layout is vertical */
+    flex-direction: column;
     align-items: center;
     padding: 20px;
 }
 
-.payment-section {
+.content-section {
     background-color: #ffffff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
     width: 100%;
-    max-width: 600px;
+    max-width: 800px;
     box-sizing: border-box;
 }
 
-.payment-section input[type="text"],
-.payment-section input[type="number"] {
+.content-section input[type="text"],
+.content-section input[type="number"],
+.content-section select {
     padding: 10px;
-    border: 1px solid black; /* Changes border to black */
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     width: 100%;
     box-sizing: border-box;
+    margin-bottom: 10px;
 }
 
-.payment-section button {
-    background-color: #e57373;
+.btn {
+    background-color: var(--secondary-color);
     color: white;
-    padding: 12px 20px;
+    padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
+    transition: background-color 0.3s;
 }
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+}
+.btn-danger:hover {
+    background-color: var(--danger-hover);
+}
+
 
 .nav-links {
     display: flex;
-    justify-content: center; /* Creates a horizontal layout for links */
+    justify-content: center;
     gap: 20px;
     margin-top: 20px;
 }
 
 .nav-link {
     text-decoration: none;
-    color: #007bff;
+    color: var(--secondary-color);
     font-weight: bold;
-    padding: 10px;
-    border: 1px solid transparent;
+    padding: 10px 15px;
     border-radius: 4px;
     transition: background-color 0.3s;
 }
 
 .nav-link:hover {
     background-color: #e9ecef;
+}
+
+/* User List Styling */
+.user-list {
+    list-style: none;
+    padding: 0;
+}
+
+.user-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.user-list li:last-child {
+    border-bottom: none;
+}
+
+/* ====================================
+   Success Message Styling
+   ==================================== */
+.success-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.success-container h1 {
+    font-size: 2.5em;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.success-container a {
+    text-decoration: none;
+    color: #ffffff;
+    background-color: var(--secondary-color);
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.2em;
+}
+
+/* ====================================
+   Mobile Responsive Styles
+   ==================================== */
+@media (max-width: 768px) {
+    .user-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .login-container {
+        width: 90%;
+        padding: 20px;
+    }
+}
+/* ====================================
+   Flash Message Styling
+   ==================================== */
+.alert {
+    padding: 15px;
+    margin: 20px auto;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    width: 80%;
+    max-width: 800px;
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+/* ====================================
+   Search Bar Styling
+   ==================================== */
+.search-container {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 800px;
+}
+
+#userSearch {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+/* ====================================
+   Chart Styling
+   ==================================== */
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 60vh;
+    width: 80vw;
+    max-width: 500px;
+}
+/* ====================================
+   Form Validation Styling
+   ==================================== */
+.form-group label.required::after {
+    content: " *";
+    color: var(--danger-color);
+    font-weight: bold;
+}
+
+input:invalid {
+    border-color: var(--danger-color);
+}
+
+/* ====================================
+   Pagination Styling
+   ==================================== */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.page-info {
+    font-weight: bold;
+}
+
+.user-actions a, .user-actions form {
+    margin-left: 10px;
+}
+
+/* ====================================
+   Admin Actions Styling
+   ==================================== */
+.admin-actions {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+/* ====================================
+   Main Layout & Navigation Styling
+   ==================================== */
+.main-header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 0 20px;
+    position: sticky; /* Makes the header stick to the top */
+    top: 0;
+    z-index: 1000;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 70px;
+}
+
+.header-brand {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-decoration: none;
+    color: var(--primary-color);
+}
+
+.main-nav a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.main-nav a:hover {
+    background-color: #f0f2f5;
+}
+
+.main-nav a.btn {
+    color: white; /* Ensure text is white on buttons */
+}
+
+.main-nav a.btn:hover {
+    background-color: var(--danger-hover); /* Specific hover for logout button */
+}
+
+/* ====================================
+   Table & Sorting Styling
+   ==================================== */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.user-table th, .user-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-table th a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.user-table th a:hover {
+    color: var(--primary-color);
+}
+
+/* ====================================
+   Dashboard Stats Styling
+   ==================================== */
+.summary-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 840px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+    flex-grow: 1;
+    min-width: 200px;
+}
+
+.stat-card h3 {
+    margin-top: 0;
+    color: #757575;
+}
+
+.stat-card p {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+ /* ====================================
+   Dashboard Stats Styling
+   ==================================== */
+.summary-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 840px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+    flex-grow: 1;
+    min-width: 200px;
+}
+
+.stat-card h3 {
+    margin-top: 0;
+    color: #757575;
+}
+
+.stat-card p {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 0;
 }

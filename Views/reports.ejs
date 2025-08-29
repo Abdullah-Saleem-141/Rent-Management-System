@@ -1,21 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monthly Report</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <h2>Monthly Report</h2>
-    <h3>Total Collected this Month: <%= totalCollected %></h3>
-    <h3>Users Remaining to Pay:</h3>
+<%- include('partials/header', { title: 'Monthly Report', chartjs: true }) %>
+<%- include('partials/messages') %>
+
+<div class="content-section">
+    <h2>Financial Overview</h2>
+    <div class="chart-container">
+        <canvas id="rentChart"></canvas>
+    </div>
+</div>
+
+<div class="content-section">
+    <h3>Users Remaining to Pay <a href="/download-report" class="btn" style="float: right;">Download Report</a></h3>
     <ul>
         <% unpaidUsers.forEach(user => { %>
-            <li><%= user.name %> (<%= user.location %>)</li>
+            <li><%= user.name %> (<%= user.location %>) - Fare: <%= user.fixedFare %></li>
         <% }); %>
     </ul>
-    <br>
-    <a href='/dashboard'>Go Back to Dashboard</a>
-</body>
-</html>
+</div>
+
+<script>
+    const ctx = document.getElementById('rentChart').getContext('2d');
+    const rentChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Collected', 'Outstanding'],
+            datasets: [{
+                label: 'Rent Status',
+                data: [<%= totalCollected %>, <%= totalUnpaid %>],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Monthly Rent Collection Status'
+                }
+            }
+        }
+    });
+</script>
+<%- include('partials/footer') %>

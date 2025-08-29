@@ -4,12 +4,16 @@ process.on('uncaughtException', (error, origin) => {
 });
 
 require("dotenv").config();
+const locationRoutes = require("./routes/locationRoutes");
+const flash = require('connect-flash');
+const cookieParser = require('cookie-parser');
 const express = require("express");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const MongoStore = require("connect-mongo");
 const compression = require('compression'); // <-- ADD THIS LINE
-const userRoutes = require("./routes/userRoutes"); // Import the new routes file
+const authRoutes = require("./routes/authRoutes");
+const mainRoutes = require("./routes/mainRoutes"); // Import the new routes file
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -26,6 +30,7 @@ app.use(express.static('public', { maxAge: '1d' }));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(compression()); // <-- AND ADD THIS LINE
 
 // ✅ Health check route for Railway
@@ -47,13 +52,23 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 day
 }));
 
+app.use(flash());
+// Middleware to make flash messages available in all templates
+app.use((req, res, next) => {
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    next();
+});
+
 // ✅ Connect to MongoDB and start server
 mongoose.connect(MONGO_URL)
     .then(() => {
         console.log("✅ MongoDB connected");
         
         // Use the modular router for all application routes
-        app.use("/", userRoutes);
+        app.use("/", authRoutes);
+        app.use("/", mainRoutes);
+        app.use("/", locationRoutes);
 
         // Start server only after a successful database connection
         app.listen(PORT, "0.0.0.0", () => {

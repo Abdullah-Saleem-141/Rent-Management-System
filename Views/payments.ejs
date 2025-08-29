@@ -1,31 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment History for <%= user.name %></title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <h1>Payment History for <%= user.name %></h1>
-    <h2>Fixed Fare: <%= user.fixedFare %></h2>
-    <h3>Total Paid: <%= totalPaid %></h3>
-    <br>
+<%- include('partials/header', { title: `Payments for ${user.name}` }) %>
+<%- include('partials/messages') %>
+
+<div class="content-section">
+    <h2>Payment History for <%= user.name %></h2>
+    <p><strong>Fixed Fare:</strong> <%= user.fixedFare %></p>
+    <p><strong>Total Paid:</strong> <%= totalPaid %></p>
+    <hr>
     <% if (payments.length > 0) { %>
-        <ul>
+        <ul class="user-list">
             <% payments.forEach(payment => { %>
                 <li>
-    Amount: <%= payment.amount %> - Date: <%= payment.date.toDateString() %>
-    <form action="/delete-payment/<%= payment._id %>" method="post" style="display:inline;">
-        <button type="submit">Delete</button>
-    </form>
-</li>
+                    <span>Amount: <%= payment.amount %> - Date: <%= payment.date.toDateString() %></span>
+                   <form action="/delete-payment/<%= payment._id %>" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this payment record?');">
+    <button type="submit" class="btn btn-danger">Delete</button>
+</form>
+                </li>
             <% }); %>
         </ul>
     <% } else { %>
         <p>No payments found for this user.</p>
     <% } %>
-    <br>
-    <a href='/users'>Go Back to Users List</a>
-</body>
-</html>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,40 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <header class="app-header">
-        <h1>Rent Management System</h1>
-    </header>
-    <div class="dashboard-container">
-        <div class="payment-section">
-            <h2>Record a Payment</h2>
-            <form action="/save-payment" method="post">
-                <label for="userId">Select User:</label>
-                <select name="userId" id="userId" required>
-                    <% if (typeof users !== 'undefined') { %>
-                        <% users.forEach(user => { %>
-                            <option value="<%= user._id %>"><%= user.name %> - <%= user.location %></option>
-                        <% }); %>
-                    <% } %>
-                </select>
-                <br><br>
-                <label for="amount">Amount:</label>
-                <input type="number" name="amount" id="amount" required>
-                <br><br>
-                <button type="submit">Save Payment</button>
-            </form>
-        </div>
-        
-        <div class="nav-links">
-            <a href="/add-user" class="nav-link">Add New User</a>
-            <a href="/users" class="nav-link">View All Users</a>
-            <a href="/reports" class="nav-link">View Monthly Reports</a>
-        </div>
+<%- include('partials/header', { title: 'Dashboard' }) %>
+<%- include('partials/messages') %>
+
+<div class="summary-container">
+    <div class="stat-card">
+        <h3>Total Users</h3>
+        <p><%= totalUsers %></p>
     </div>
-</body>
-</html>
+    <div class="stat-card">
+        <h3>Collected This Month</h3>
+        <p><%= totalCollected %></p>
+    </div>
+    <div class="stat-card">
+        <h3>Unpaid Users</h3>
+        <p><%= unpaidUsersCount %></p>
+    </div>
+</div>
+
+<div class="content-section">
+    <h2>Record a Payment</h2>
+    <form action="/save-payment" method="post">
+        <label for="userId">Select User:</label>
+        <select name="userId" id="userId" required>
+            <% if (typeof users !== 'undefined') { %>
+                <% users.forEach(user => { %>
+                    <option value="<%= user._id %>" data-fare="<%= user.fixedFare %>"><%= user.name %> - <%= user.location %></option>
+                <% }); %>
+            <% } %>
+        </select>
+        <br><br>
+        <label for="amount">Amount:</label>
+        <input type="number" name="amount" id="amount" required>
+        <br><br>
+        <button type="submit" class="btn">Save Payment</button>
+    </form>
+</div>
+
+<div class="admin-actions">
+    <form action="/mark-all-unpaid" method="post" onsubmit="return confirm('Are you sure you want to mark ALL users as unpaid? This cannot be undone.');">
+        <button type="submit" class="btn btn-warning">Mark All Users as Unpaid</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userSelect = document.getElementById('userId');
+        const amountInput = document.getElementById('amount');
+
+        // Function to update the amount based on the selected user
+        function updateAmount() {
+            const selectedOption = userSelect.options[userSelect.selectedIndex];
+            if (selectedOption) {
+                const fare = selectedOption.getAttribute('data-fare');
+                if (fare) {
+                    amountInput.value = fare;
+                }
+            }
+        }
+
+        // Add an event listener to the dropdown
+        userSelect.addEventListener('change', updateAmount);
+
+        // Set the initial value when the page loads
+        updateAmount();
+    });
+</script>
+<%- include('partials/footer') %>
