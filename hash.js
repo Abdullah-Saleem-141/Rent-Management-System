@@ -1,8 +1,13 @@
 const bcrypt = require('bcryptjs');
-const password = '831'; // Your password from the old code
+
+const myNewPassword = "0831"; // Replace with your desired new password
 const saltRounds = 10;
 
-bcrypt.hash(password, saltRounds, function(err, hash) {
-    if (err) throw err;
-    console.log("Your Hashed Password:", hash);
- });
+bcrypt.hash(myNewPassword, saltRounds, function(err, hash) {
+    if (err) {
+        console.error(err);
+    } else {
+        console.log("New Hashed Password:");
+        console.log(hash);
+    }
+});
