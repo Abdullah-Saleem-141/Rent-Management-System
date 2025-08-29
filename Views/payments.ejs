@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History for <%= user.name %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Payment History for <%= user.name %></h1>
+    <h2>Fixed Fare: <%= user.fixedFare %></h2>
+    <h3>Total Paid: <%= totalPaid %></h3>
+    <br>
+    <% if (payments.length > 0) { %>
+        <ul>
+            <% payments.forEach(payment => { %>
+                <li>
+    Amount: <%= payment.amount %> - Date: <%= payment.date.toDateString() %>
+    <form action="/delete-payment/<%= payment._id %>" method="post" style="display:inline;">
+        <button type="submit">Delete</button>
+    </form>
+</li>
+            <% }); %>
+        </ul>
+    <% } else { %>
+        <p>No payments found for this user.</p>
+    <% } %>
+    <br>
+    <a href='/users'>Go Back to Users List</a>
+</body>
+</html>

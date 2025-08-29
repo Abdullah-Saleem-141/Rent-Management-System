@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Users</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h2>All Users</h2>
+    <ul>
+        <% users.forEach(user => { %>
+            <li>
+                <strong><%= user.name %></strong> (<%= user.location %>) - Fixed Fare: <strong><%= user.fixedFare %></strong>
+                <% if (user.isPaid) { %>
+                    - <span style="color: green;">Paid</span>
+                <% } else { %>
+                    - <span style="color: red;">Unpaid</span>
+                <% } %>
+                <form action="/delete-user/<%= user._id %>" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+                <a href="/edit-user/<%= user._id %>">Edit</a>
+                <a href="/edit-user/<%= user._id %>">Edit</a>
+                <a href="/payments/<%= user._id %>">View Payments</a>
+            </li>
+        <% }); %>
+    </ul>
+    <br>
+    <a href='/dashboard'>Record
