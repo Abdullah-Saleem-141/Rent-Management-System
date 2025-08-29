@@ -14,7 +14,20 @@
         <div class="payment-section">
             <h2>Record a Payment</h2>
             <form action="/save-payment" method="post">
-                </form>
+                <label for="userId">Select User:</label>
+                <select name="userId" id="userId" required>
+                    <% if (typeof users !== 'undefined') { %>
+                        <% users.forEach(user => { %>
+                            <option value="<%= user._id %>"><%= user.name %> - <%= user.location %></option>
+                        <% }); %>
+                    <% } %>
+                </select>
+                <br><br>
+                <label for="amount">Amount:</label>
+                <input type="number" name="amount" id="amount" required>
+                <br><br>
+                <button type="submit">Save Payment</button>
+            </form>
         </div>
         
         <div class="nav-links">
