@@ -1,93 +1,158 @@
+/* ====================================
+   General Styling
+   ==================================== */
 body {
+    background-color: #f0f2f5;
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
     margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    line-height: 1.6;
 }
 
-.main-container {
-    background-color: #fff;
-    padding: 40px;
+/* ====================================
+   Login Page Styling
+   ==================================== */
+
+.login-container {
+    background-color: #ffffff;
+    padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 600px;
-    box-sizing: border-box;
+    text-align: center;
+    width: 350px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
+    /* Center the login container on the page */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
-h1, h2, h3 {
-    text-align: center;
-    color: #5a5a5a;
+h1 {
+    color: #4CAF50; /* A new color for the heading */
+    margin-bottom: 10px;
+}
+
+.logo-container {
+    margin: 20px 0;
+}
+
+.logo {
+    width: 100px; /* Adjust size as needed */
+    height: 100px;
+    border-radius: 50%; /* Makes the image circular */
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+h2 {
+    color: #757575;
+    margin-top: 0;
     margin-bottom: 20px;
 }
 
-.data-entry-form {
+.login-form .form-group {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    max-width: 300px;
-}
-
-label {
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="number"],
-select {
-    width: 100%;
-    padding: 10px;
     margin-bottom: 15px;
-    border: 1px solid #ccc;
+}
+
+.login-form label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+    padding: 10px;
+    border: 1px solid black; /* Changes border to black */
     border-radius: 4px;
+    width: 100%;
     box-sizing: border-box;
 }
 
-button {
-    background-color: #007bff;
+.btn-login {
+    background-color: #e57373;
     color: white;
     padding: 12px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
-    transition: background-color 0.3s ease;
+    width: 100%;
 }
 
-button:hover {
-    background-color: #0056b3;
+.btn-login:hover {
+    background-color: #d32f2f;
 }
 
-/* Styles for delete buttons */
-button[type="submit"] {
-    padding: 5px 10px;
-    font-size: 14px;
-    background-color: #dc3545;
+/* ====================================
+   Internal Page Styling (Dashboard)
+   ==================================== */
+
+.app-header {
+    text-align: center;
+    margin-top: 20px;
+    color: #4CAF50; /* A new color for the heading */
 }
 
-button[type="submit"]:hover {
-    background-color: #c82333;
+/* Layout for the main content area */
+.dashboard-container {
+    display: flex;
+    flex-direction: column; /* Main layout is vertical */
+    align-items: center;
+    padding: 20px;
 }
 
-/* Make the page responsive on smaller screens */
-@media (max-width: 600px) {
-    .main-container {
-        margin: 20px;
-        padding: 20px;
-    }
+.payment-section {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 600px;
+    box-sizing: border-box;
+}
 
-    h1 {
-        font-size: 24px;
-    }
+.payment-section input[type="text"],
+.payment-section input[type="number"] {
+    padding: 10px;
+    border: 1px solid black; /* Changes border to black */
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.payment-section button {
+    background-color: #e57373;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.nav-links {
+    display: flex;
+    justify-content: center; /* Creates a horizontal layout for links */
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.nav-link:hover {
+    background-color: #e9ecef;
 }
