@@ -18,7 +18,7 @@ const MONGO_URL = process.env.MONGO_URL;
 
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
-app.set('views', './views');
+app.set('views', './Views');
 
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
