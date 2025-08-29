@@ -23,7 +23,7 @@
         <select name="userId" id="userId" required>
             <% if (typeof users !== 'undefined') { %>
                 <% users.forEach(user => { %>
-                    <option value="<%= user._id %>" data-fare="<%= user.fixedFare %>"><%= user.name %> - <%= user.location %></option>
+                    <option value="<%= user._id %>" data-fare="<%= user.fixedFare %>"><%= user.name %> - <%= user.location.name %></option>
                 <% }); %>
             <% } %>
         </select>

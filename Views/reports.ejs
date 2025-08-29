@@ -12,7 +12,7 @@
     <h3>Users Remaining to Pay <a href="/download-report" class="btn" style="float: right;">Download Report</a></h3>
     <ul>
         <% unpaidUsers.forEach(user => { %>
-            <li><%= user.name %> (<%= user.location %>) - Fare: <%= user.fixedFare %></li>
+            <li><%= user.name %> (<%= user.location.name %>) - Fare: <%= user.fixedFare %></li>
         <% }); %>
     </ul>
 </div>

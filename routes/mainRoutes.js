@@ -27,7 +27,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
         const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
         // Get all users for the payment form dropdown
-        const users = await User.find().lean();
+        const users = await User.find().populate('location').lean();
 
         // Calculate stats
         const totalUsers = await User.countDocuments();
@@ -117,7 +117,7 @@ router.get("/reports", authMiddleware, async (req, res) => {
         const totalCollected = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
 
         // Get unpaid users
-        const unpaidUsers = await User.find({ isPaid: false }).lean();
+        const unpaidUsers = await User.find({ isPaid: false }).populate('location').lean();
 
         // Calculate the total fare of unpaid users
         const totalUnpaid = unpaidUsers.reduce((sum, user) => sum + user.fixedFare, 0);
@@ -251,17 +251,24 @@ router.post("/delete-payment/:id", authMiddleware, async (req, res) => {
 // Route to download the monthly report as a CSV file
 router.get("/download-report", authMiddleware, async (req, res) => {
     try {
-        const unpaidUsers = await User.find({ isPaid: false }).lean();
+        const unpaidUsers = await User.find({ isPaid: false }).populate('location').lean();
 
         if (unpaidUsers.length === 0) {
             req.flash('error_msg', 'There are no unpaid users to export.');
             return res.redirect('/reports');
         }
 
+        // Manually format the data for the CSV
+        const formattedUsers = unpaidUsers.map(user => ({
+            name: user.name,
+            location: user.location.name,
+            fixedFare: user.fixedFare
+        }));
+
         const fields = ['name', 'location', 'fixedFare'];
         const opts = { fields };
         const parser = new Parser(opts);
-        const csv = parser.parse(unpaidUsers);
+        const csv = parser.parse(formattedUsers);
 
         res.header('Content-Type', 'text/csv');
         res.attachment('unpaid-users-report.csv');
