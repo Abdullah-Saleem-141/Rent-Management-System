@@ -27,7 +27,7 @@
         <tbody>
             <% users.docs.forEach(user => { %>
                 <tr>
-                    <td><%= user.name %> (<%= user.location %>)</td>
+                    <td><%= user.name %> (<%= user.location.name %>)</td>
                     <td><%= user.fixedFare %></td>
                     <td>
                         <% if (user.isPaid) { %>

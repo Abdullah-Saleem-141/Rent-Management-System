@@ -21,8 +21,35 @@ router.use(authMiddleware);
 
 // Dashboard
 router.get("/dashboard", authMiddleware, async (req, res) => {
-    const users = await User.find().lean();
-    res.render('dashboard', { users: users });
+    try {
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+        // Get all users for the payment form dropdown
+        const users = await User.find().lean();
+
+        // Calculate stats
+        const totalUsers = await User.countDocuments();
+        const unpaidUsersCount = await User.countDocuments({ isPaid: false });
+
+        const totalCollectedResult = await Payment.aggregate([
+            { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalCollected = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
+
+        res.render('dashboard', {
+            users: users,
+            totalUsers: totalUsers,
+            totalCollected: totalCollected,
+            unpaidUsersCount: unpaidUsersCount,
+            title: 'Dashboard' // Also a good idea to pass a title
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error loading dashboard." });
+    }
 });
 
 // Save a new payment
@@ -46,18 +73,29 @@ router.post("/save-payment", authMiddleware, async (req, res) => {
 });
 
 // View all users with pagination
+// View all users with pagination and sorting
 router.get("/users", authMiddleware, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
+        const sortField = req.query.sortField || 'name'; // Default sort by name
+        const sortOrder = req.query.sortOrder || 'asc';   // Default sort ascending
+
         const options = {
             page: page,
             limit: limit,
-            lean: true
+            lean: true,
+            sort: { [sortField]: sortOrder },
+            populate: 'location' // Populate location to display its name
         };
 
         const users = await User.paginate({}, options);
-        res.render('users', { users: users });
+        res.render('users', {
+            users: users,
+            sortField: sortField,
+            sortOrder: sortOrder,
+            title: 'All Users'
+        });
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error fetching users" });
@@ -141,17 +179,17 @@ router.post("/delete-user/:id", authMiddleware, async (req, res) => {
 router.get("/edit-user/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id);
+        const user = await User.findById(id).populate('location'); // Use populate to get location details
+        const locations = await Location.find().sort({ name: 'asc' }).lean();
         if (!user) {
             return res.status(404).render('error', { message: "User not found." });
         }
-        res.render('edit-user', { user: user });
+        res.render('edit-user', { user: user, locations: locations, title: 'Edit User' });
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error fetching user data." });
     }
 });
-
 // Route to handle form submission and update the user in the database
 router.post("/edit-user/:id", authMiddleware, async (req, res) => {
     try {

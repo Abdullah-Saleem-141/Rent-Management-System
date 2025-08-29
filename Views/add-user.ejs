@@ -8,9 +8,15 @@
             <input type="text" id="name" name="name" required />
         </div>
         <div class="form-group">
-            <label for="location" class="required">Location:</label>
-            <input type="text" id="location" name="location" required />
-        </div>
+    <label for="location" class="required">Location:</label>
+    <select id="location" name="location" required>
+        <% if (locations && locations.length > 0) { %>
+            <% locations.forEach(location => { %>
+                <option value="<%= location._id %>"><%= location.name %></option>
+            <% }); %>
+        <% } %>
+    </select>
+</div>
         <div class="form-group">
             <label for="fixedFare" class="required">Fixed Fare:</label>
             <input type="number" id="fixedFare" name="fixedFare" required />
