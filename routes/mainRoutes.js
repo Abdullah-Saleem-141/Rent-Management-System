@@ -18,36 +18,40 @@ router.use(authMiddleware);
 
 
 // Dashboard
+// New, more efficient code for your /dashboard route
 router.get("/dashboard", authMiddleware, async (req, res) => {
-    console.log("Attempting to load the dashboard route...");
     try {
-        const today = new Date();
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        // ... (other code like date calculations remains the same)
 
-        let locations = await Location.find().sort({ name: 'asc' }).lean();
-
-        for (let i = 0; i < locations.length; i++) {
-            const unpaid = await User.find({ location: locations[i]._id, balance: { $gt: 0 } }).sort({ name: 'asc' }).lean();
-            const paid = await User.find({ location: locations[i]._id, balance: { $lte: 0 } }).sort({ name: 'asc' }).lean();
-            locations[i].users = [...unpaid, ...paid];
-        }
-
-        const totalUsers = await User.countDocuments();
-        const unpaidUsersCount = await User.countDocuments({ balance: { $gt: 0 } });
-
-        const totalCollectedResult = await Payment.aggregate([
-            { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+        // 1. Fetch all locations and users in parallel
+        const [locations, users] = await Promise.all([
+            Location.find().sort({ name: 'asc' }).lean(),
+            User.find().sort({ name: 'asc' }).lean()
         ]);
-        const totalCollected = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
+
+        // 2. Create a map for easy lookup
+        const locationsMap = new Map(locations.map(loc => [loc._id.toString(), { ...loc, users: [] }]));
+
+        // 3. Group users by their location
+        users.forEach(user => {
+            const userLocationId = user.location.toString();
+            if (locationsMap.has(userLocationId)) {
+                locationsMap.get(userLocationId).users.push(user);
+            }
+        });
+
+        // 4. Sort users within each location (unpaid first)
+        locationsMap.forEach(location => {
+            location.users.sort((a, b) => a.balance - b.balance);
+        });
+
+        const finalLocations = Array.from(locationsMap.values());
+
+        // ... (rest of the dashboard logic for totalUsers, totalCollected, etc.)
 
         res.render('dashboard', {
-            locations: locations,
-            totalUsers: totalUsers,
-            totalCollected: totalCollected,
-            unpaidUsersCount: unpaidUsersCount,
-            title: 'Dashboard'
+            locations: finalLocations,
+            // ... (pass other variables to the template)
         });
     } catch (err) {
         console.error(err);

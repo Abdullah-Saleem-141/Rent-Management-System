@@ -74,9 +74,10 @@ mongoose.connect(MONGO_URL)
         app.use("/", adminRoutes);
 
         // Start server only after a successful database connection
-        app.listen(PORT, "0.0.0.0", () => {
-            console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
-        });
+        // New, corrected code
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
 
     })
     .catch(err => {
