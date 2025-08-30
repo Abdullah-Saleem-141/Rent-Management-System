@@ -1,0 +1,111 @@
+<%- include('partials/header', { title: title }) %>
+<%- include('partials/messages') %>
+
+<div class="content-section">
+    <h2>Users in <%= location.name %> <a href="/add-user" class="btn" style="float: right;">Add New User</a></h2>
+    
+    <div class="search-container">
+        <input type="text" id="userSearch" onkeyup="filterUsers()" placeholder="Type or use mic to search...">
+        <button id="mic-btn" title="Search with Voice"><i class="fas fa-microphone"></i></button>
+    </div>
+
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th data-label="Name">Name</th>
+                <th data-label="Fixed Fare">Fixed Fare</th>
+                <th data-label="Status">Status</th>
+                <th data-label="Actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.docs.forEach(user => { %>
+                <tr>
+                    <td data-label="Name"><%= user.name %></td>
+                    <td data-label="Fixed Fare"><%= user.fixedFare %></td>
+                    <td data-label="Status">
+                        <% if (user.balance <= 0) { %>
+                            <span style="color: green;">Paid</span>
+                        <% } else { %>
+                            <span style="color: red;">Owes: <%= user.balance %></span>
+                        <% } %>
+                    </td>
+                    <td data-label="Actions" class="user-actions">
+                        <a href="/edit-user/<%= user._id %>" class="btn"><i class="fas fa-edit"></i> Edit</a>
+                        <a href="/payments/<%= user._id %>" class="btn"><i class="fas fa-money-bill-wave"></i> Payments</a>
+                        <form action="/delete-user/<%= user._id %>" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <div class="pagination-controls">
+        <% if (users.hasPrevPage) { %><a href="/users/location/<%= location._id %>?page=<%= users.prevPage %>" class="btn">Previous</a><% } %>
+        <span class="page-info">Page <%= users.page %> of <%= users.totalPages %></span>
+        <% if (users.hasNextPage) { %><a href="/users/location/<%= location._id %>?page=<%= users.nextPage %>" class="btn">Next</a><% } %>
+    </div>
+    <br>
+    <a href="/users" class="btn">Back to All Locations</a>
+</div>
+
+<script>
+// Function to filter the table
+function filterUsers() {
+    const input = document.getElementById('userSearch');
+    const filter = input.value.toUpperCase();
+    const table = document.querySelector('.user-table');
+    const tr = table.getElementsByTagName('tr');
+    for (let i = 1; i < tr.length; i++) {
+        const td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+            const txtValue = td.textContent || td.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+}
+
+// Script for voice search
+document.addEventListener('DOMContentLoaded', function() {
+    const micBtn = document.getElementById('mic-btn');
+    const searchInput = document.getElementById('userSearch');
+
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = function() {
+            micBtn.classList.add('is-listening');
+            micBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        };
+
+        recognition.onend = function() {
+            micBtn.classList.remove('is-listening');
+            micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            searchInput.value = transcript;
+            filterUsers(); // Trigger the table filter function
+        };
+
+        micBtn.addEventListener('click', function() {
+            recognition.start();
+        });
+
+    } else {
+        micBtn.style.display = 'none';
+        console.log('Speech Recognition not supported in this browser.');
+    }
+});
+</script>
+
+<%- include('partials/footer') %>

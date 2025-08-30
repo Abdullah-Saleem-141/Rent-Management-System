@@ -5,6 +5,7 @@ process.on('uncaughtException', (error, origin) => {
 
 require("dotenv").config();
 const locationRoutes = require("./routes/locationRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const flash = require('connect-flash');
 const cookieParser = require('cookie-parser');
 const express = require("express");
@@ -14,6 +15,7 @@ const MongoStore = require("connect-mongo");
 const compression = require('compression'); // <-- ADD THIS LINE
 const authRoutes = require("./routes/authRoutes");
 const mainRoutes = require("./routes/mainRoutes"); // Import the new routes file
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -69,6 +71,7 @@ mongoose.connect(MONGO_URL)
         app.use("/", authRoutes);
         app.use("/", mainRoutes);
         app.use("/", locationRoutes);
+        app.use("/", adminRoutes);
 
         // Start server only after a successful database connection
         app.listen(PORT, "0.0.0.0", () => {

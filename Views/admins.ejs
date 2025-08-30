@@ -1,0 +1,37 @@
+<%- include('partials/header', { title: title }) %>
+<%- include('partials/messages') %>
+
+<div class="content-section">
+    <h2>Add New Admin</h2>
+    <form action="/admins/add" method="post">
+        <div class="form-group">
+            <label for="username" class="required">Username:</label>
+            <input type="text" id="username" name="username" required />
+        </div>
+        <div class="form-group">
+            <label for="password" class="required">Password:</label>
+            <input type="password" id="password" name="password" required />
+        </div>
+        <button type="submit" class="btn">Add Admin</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <h2>Existing Admins</h2>
+    <ul class="user-list">
+        <% if (admins && admins.length > 0) { %>
+            <% admins.forEach(admin => { %>
+                <li>
+                    <span><strong><i class="fas fa-user-shield"></i> <%= admin.username %></strong></span>
+                    <form action="/admins/delete/<%= admin._id %>" method="post" onsubmit="return confirm('Are you sure you want to delete this admin?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </li>
+            <% }); %>
+        <% } else { %>
+            <p>No admin accounts found.</p>
+        <% } %>
+    </ul>
+</div>
+
+<%- include('partials/footer') %>

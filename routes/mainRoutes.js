@@ -4,20 +4,18 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 const { Parser } = require('json2csv');
 
-// Import all models from the new 'models' directory
+// Import all models
 const User = require('../models/User');
 const Payment = require('../models/Payment');
 const Location = require('../models/Location');
 
-// ✅ Auth Middleware (moved from the old schema section)
+// Auth Middleware
 function authMiddleware(req, res, next) {
     if (req.session && req.session.loggedIn) next();
     else res.redirect("/");
 }
 router.use(authMiddleware);
 
-
-// ALL YOUR EXISTING ROUTES START HERE (UNCHANGED)
 
 // Dashboard
 router.get("/dashboard", authMiddleware, async (req, res) => {
@@ -27,12 +25,16 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-        // Get all users for the payment form dropdown
-        const users = await User.find().populate('location').lean();
+        let locations = await Location.find().sort({ name: 'asc' }).lean();
 
-        // Calculate stats
+        for (let i = 0; i < locations.length; i++) {
+            const unpaid = await User.find({ location: locations[i]._id, balance: { $gt: 0 } }).sort({ name: 'asc' }).lean();
+            const paid = await User.find({ location: locations[i]._id, balance: { $lte: 0 } }).sort({ name: 'asc' }).lean();
+            locations[i].users = [...unpaid, ...paid];
+        }
+
         const totalUsers = await User.countDocuments();
-        const unpaidUsersCount = await User.countDocuments({ isPaid: false });
+        const unpaidUsersCount = await User.countDocuments({ balance: { $gt: 0 } });
 
         const totalCollectedResult = await Payment.aggregate([
             { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
@@ -41,11 +43,11 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
         const totalCollected = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
 
         res.render('dashboard', {
-            users: users,
+            locations: locations,
             totalUsers: totalUsers,
             totalCollected: totalCollected,
             unpaidUsersCount: unpaidUsersCount,
-            title: 'Dashboard' // Also a good idea to pass a title
+            title: 'Dashboard'
         });
     } catch (err) {
         console.error(err);
@@ -57,13 +59,14 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
 router.post("/save-payment", authMiddleware, async (req, res) => {
     try {
         const { userId, amount } = req.body;
-        if (!userId || !amount) {
+        const paymentAmount = Number(amount);
+        if (!userId || !paymentAmount) {
             return res.status(400).render('error', { message: "User and amount required" });
         }
 
-        const payment = new Payment({ userId, amount });
+        const payment = new Payment({ userId, amount: paymentAmount });
         await payment.save();
-        await User.findByIdAndUpdate(userId, { isPaid: true });
+        await User.findByIdAndUpdate(userId, { $inc: { balance: -paymentAmount } });
 
         req.flash('success_msg', 'Payment saved successfully!');
         res.redirect('/dashboard');
@@ -73,70 +76,56 @@ router.post("/save-payment", authMiddleware, async (req, res) => {
     }
 });
 
-// View all users with pagination
-// View all users with pagination and sorting
+// Display list of locations
 router.get("/users", authMiddleware, async (req, res) => {
     try {
+        const locations = await Location.find().sort({ name: 'asc' }).lean();
+        res.render('users', {
+            locations: locations,
+            title: 'Users by Location'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error fetching locations" });
+    }
+});
+
+// Display users for a specific location
+router.get("/users/location/:id", authMiddleware, async (req, res) => {
+    try {
+        const locationId = req.params.id;
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
-        const sortField = req.query.sortField || 'name'; // Default sort by name
-        const sortOrder = req.query.sortOrder || 'asc';   // Default sort ascending
+
+        const location = await Location.findById(locationId).lean();
+        if (!location) {
+            req.flash('error_msg', 'Location not found.');
+            return res.redirect('/users');
+        }
 
         const options = {
             page: page,
             limit: limit,
             lean: true,
-            sort: { [sortField]: sortOrder },
-            populate: 'location' // Populate location to display its name
+            sort: { name: 'asc' },
+            populate: 'location'
         };
 
-        const users = await User.paginate({}, options);
-        res.render('users', {
+        const users = await User.paginate({ location: locationId }, options);
+
+        res.render('users-by-location', {
             users: users,
-            sortField: sortField,
-            sortOrder: sortOrder,
-            title: 'All Users'
+            location: location,
+            title: `Users in ${location.name}`
         });
     } catch (err) {
         console.error(err);
-        res.status(500).render('error', { message: "Error fetching users" });
+        res.status(500).render('error', { message: "Error fetching users for this location" });
     }
 });
 
-// Monthly reports
-router.get("/reports", authMiddleware, async (req, res) => {
-    try {
-        const today = new Date();
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-        // Get total collected amount
-        const totalCollectedResult = await Payment.aggregate([
-            { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
-        ]);
-        const totalCollected = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
-
-        // Get unpaid users
-        const unpaidUsers = await User.find({ isPaid: false }).populate('location').lean();
-
-        // Calculate the total fare of unpaid users
-        const totalUnpaid = unpaidUsers.reduce((sum, user) => sum + user.fixedFare, 0);
-
-        res.render('reports', {
-            totalCollected: totalCollected,
-            unpaidUsers: unpaidUsers,
-            totalUnpaid: totalUnpaid // Pass the new data to the template
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).render('error', { message: "Error fetching reports" });
-    }
-});
-
-// Route to display the Add User form
-router.get("/add-user", async (req, res) => {
+// Display the Add User form
+router.get("/add-user", authMiddleware, async (req, res) => {
     try {
         const locations = await Location.find().sort({ name: 'asc' }).lean();
         res.render('add-user', { locations: locations, title: 'Add New Customer' });
@@ -146,14 +135,15 @@ router.get("/add-user", async (req, res) => {
         res.redirect('/dashboard');
     }
 });
-// Route to handle form submission and save a new user
+
+// Handle saving a new user
 router.post("/add-user", authMiddleware, async (req, res) => {
     try {
         const { name, location, fixedFare } = req.body;
         if (!name || !location || !fixedFare) {
             return res.status(400).render('error', { message: "All fields are required." });
         }
-        const newUser = new User({ name, location, fixedFare, isPaid: false });
+        const newUser = new User({ name, location, fixedFare, balance: fixedFare });
         await newUser.save();
         req.flash('success_msg', 'User added successfully!');
         res.redirect('/users');
@@ -163,7 +153,7 @@ router.post("/add-user", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to delete a user
+// Handle deleting a user
 router.post("/delete-user/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
@@ -176,11 +166,11 @@ router.post("/delete-user/:id", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to display the Edit User form with pre-filled data
+// Display the Edit User form
 router.get("/edit-user/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id).populate('location'); // Use populate to get location details
+        const user = await User.findById(id).populate('location');
         const locations = await Location.find().sort({ name: 'asc' }).lean();
         if (!user) {
             return res.status(404).render('error', { message: "User not found." });
@@ -191,19 +181,13 @@ router.get("/edit-user/:id", authMiddleware, async (req, res) => {
         res.status(500).render('error', { message: "Error fetching user data." });
     }
 });
-// Route to handle form submission and update the user in the database
+
+// Handle updating a user
 router.post("/edit-user/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, location, fixedFare, isPaid } = req.body;
-
-        await User.findByIdAndUpdate(id, {
-            name,
-            location,
-            fixedFare,
-            isPaid: !!isPaid // Convert 'on' or undefined to a boolean
-        });
-
+        const { name, location, fixedFare, balance } = req.body;
+        await User.findByIdAndUpdate(id, { name, location, fixedFare, balance });
         req.flash('success_msg', 'User updated successfully!');
         res.redirect('/users');
     } catch (err) {
@@ -212,88 +196,111 @@ router.post("/edit-user/:id", authMiddleware, async (req, res) => {
     }
 });
 
-// Route to view payment history for a specific user
+// Display payment history for a user
 router.get("/payments/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findById(id);
         const payments = await Payment.find({ userId: id }).sort({ date: -1 });
-
         const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-
         if (!user) {
             return res.status(404).render('error', { message: "User not found." });
         }
-
-        res.render('payments', {
-            user: user,
-            payments: payments,
-            totalPaid: totalPaid
-        });
+        res.render('payments', { user, payments, totalPaid });
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error fetching payment history." });
     }
 });
 
-// Route to delete a payment
+// Handle deleting a payment
 router.post("/delete-payment/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         await Payment.findByIdAndDelete(id);
         req.flash('success_msg', 'Payment deleted successfully!');
-        res.redirect('/users');
+        res.redirect('back');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error deleting payment." });
     }
 });
 
-// Route to download the monthly report as a CSV file
-router.get("/download-report", authMiddleware, async (req, res) => {
+// Download unpaid users report
+// routes/mainRoutes.js
+
+// REPLACE the entire '/reports' route with this one
+router.get("/reports", authMiddleware, async (req, res) => {
     try {
-        const unpaidUsers = await User.find({ isPaid: false }).populate('location').lean();
+        // --- 1. Historical Monthly Income ---
+        const monthlyIncome = await Payment.aggregate([
+            {
+                $group: {
+                    _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+                    totalAmount: { $sum: "$amount" }
+                }
+            },
+            { $sort: { "_id.year": -1, "_id.month": -1 } },
+            { $limit: 12 } // Get the last 12 months
+        ]);
 
-        if (unpaidUsers.length === 0) {
-            req.flash('error_msg', 'There are no unpaid users to export.');
-            return res.redirect('/reports');
-        }
+        // Format data for the chart
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const chartLabels = monthlyIncome.map(item => `${monthNames[item._id.month - 1]} ${item._id.year}`).reverse();
+        const chartData = monthlyIncome.map(item => item.totalAmount).reverse();
 
-        // Manually format the data for the CSV
-        const formattedUsers = unpaidUsers.map(user => ({
-            name: user.name,
-            location: user.location.name,
-            fixedFare: user.fixedFare
-        }));
+        // --- 2. Current Month's Data (for comparison) ---
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        const fields = ['name', 'location', 'fixedFare'];
-        const opts = { fields };
-        const parser = new Parser(opts);
-        const csv = parser.parse(formattedUsers);
+        const totalCollectedResult = await Payment.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalCollectedThisMonth = totalCollectedResult[0] ? totalCollectedResult[0].total : 0;
 
-        res.header('Content-Type', 'text/csv');
-        res.attachment('unpaid-users-report.csv');
-        res.send(csv);
+        const unpaidUsers = await User.find({ balance: { $gt: 0 } }).populate('location').lean();
+        const totalOutstanding = unpaidUsers.reduce((sum, user) => sum + user.balance, 0);
+
+        res.render('reports', {
+            title: 'Financial Reports',
+            chartLabels: JSON.stringify(chartLabels),
+            chartData: JSON.stringify(chartData),
+            totalCollectedThisMonth: totalCollectedThisMonth,
+            totalOutstanding: totalOutstanding,
+            unpaidUsers: unpaidUsers
+        });
 
     } catch (err) {
         console.error(err);
-        res.status(500).render('error', { message: "Error generating report" });
+        res.status(500).render('error', { message: "Error fetching reports" });
     }
 });
 
-// Route to mark all users as unpaid
-router.post("/mark-all-unpaid", authMiddleware, async (req, res) => {
+// Download all users report
+router.get("/download-all-users", authMiddleware, async (req, res) => {
     try {
-        // Update all documents in the User collection
-        await User.updateMany({}, { $set: { isPaid: false } });
-
-        // Send a success message and redirect
-        req.flash('success_msg', 'All users have been marked as unpaid.');
-        res.redirect('/dashboard');
+        const users = await User.find({}).populate('location').sort({ 'location.name': 1, name: 1 }).lean();
+        if (users.length === 0) {
+            req.flash('error_msg', 'There are no users to export.');
+            return res.redirect('/users');
+        }
+        const formattedUsers = users.map(user => ({
+            Name: user.name,
+            Location: user.location ? user.location.name : 'N/A',
+            "Fixed Fare": user.fixedFare,
+            Balance: user.balance
+        }));
+        const fields = ['Name', 'Location', 'Fixed Fare', 'Balance'];
+        const opts = { fields };
+        const parser = new Parser(opts);
+        const csv = parser.parse(formattedUsers);
+        res.header('Content-Type', 'text/csv');
+        res.attachment('all-users-report.csv');
+        res.send(csv);
     } catch (err) {
         console.error(err);
-        req.flash('error_msg', 'Error updating users. Please try again.');
-        res.redirect('/dashboard');
+        res.status(500).render('error', { message: "Error generating user report" });
     }
 });
 

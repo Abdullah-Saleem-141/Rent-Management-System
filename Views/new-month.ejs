@@ -1,0 +1,25 @@
+<%- include('partials/header', { title: title }) %>
+<%- include('partials/messages') %>
+
+<div class="content-section">
+    <h2>Start New Billing Cycle</h2>
+    <p>Use these options at the beginning of a new month to update user balances. This is a permanent action for the month, so please choose carefully.</p>
+</div>
+
+<div class="content-section">
+    <h3>Option A: Carry Over Balances</h3>
+    <p>This is the standard option. Each user's new balance will be their <strong>previous balance + their fixed fare</strong>. Unpaid amounts from last month will carry over.</p>
+    <form action="/new-month/carry-over" method="post" onsubmit="return confirm('Are you sure? This will add this month\'s fare to all existing balances.');">
+        <button type="submit" class="btn">Start Month & Carry Over Balances</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <h3>Option B: Forgive Balances (Fresh Start)</h3>
+    <p>This option gives everyone a fresh start. Each user's new balance will be set exactly to their <strong>fixed fare</strong>, forgiving any unpaid debt from the previous month.</p>
+    <form action="/new-month/forgive" method="post" onsubmit="return confirm('DANGER: Are you absolutely sure? This will forgive all previous unpaid balances.');">
+        <button type="submit" class="btn btn-danger">Start Month & Forgive Balances</button>
+    </form>
+</div>
+
+<%- include('partials/footer') %>

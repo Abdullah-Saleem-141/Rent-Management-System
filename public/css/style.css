@@ -1,24 +1,28 @@
 /* ====================================
    General Styling
    ==================================== */
+/* public/css/style.css */
+
+
 :root {
-    --primary-color: #4CAF50; /* Green */
-    --secondary-color: #007bff; /* Blue */
-    --danger-color: #e57373; /* Light Red */
-    --danger-hover: #d32f2f; /* Darker Red */
-    --light-grey: #f7f7f7;
-    --text-color: #333;
-    --border-color: #ddd;
+    --primary-color: #2a9d8f;   /* A modern teal/green */
+    --secondary-color: #264653; /* A dark, complementary blue/charcoal */
+    --danger-color: #e76f51;    /* A softer, modern red/orange */
+    --danger-hover: #f4a261;   /* A complementary orange for hover */
+    --light-grey: #f8f9fa;      /* A very light grey for backgrounds */
+    --text-color: #343a40;      /* A dark grey for text */
+    --border-color: #dee2e6;    /* A light grey for borders */
 }
 
 body {
-    background-color: #f0f2f5;
-    font-family: Arial, sans-serif;
+    background-color: var(--light-grey);
+    font-family: 'Poppins', sans-serif; /* This applies the new font */
     margin: 0;
     line-height: 1.6;
     color: var(--text-color);
+    -webkit-font-smoothing: antialiased; /* Makes the font look smoother */
+    -moz-osx-font-smoothing: grayscale;
 }
-
 /* ====================================
    Login Page Styling
    ==================================== */
@@ -497,4 +501,182 @@ input:invalid {
     font-weight: bold;
     color: var(--primary-color);
     margin: 0;
+}
+
+/* public/css/style.css */
+
+/* ADD THIS ENTIRE BLOCK TO THE END OF THE FILE */
+
+/* ====================================
+   Mobile Responsive Styles
+   ==================================== */
+@media (max-width: 768px) {
+
+    /* --- Header and Navigation --- */
+    .header-content {
+        flex-direction: column;
+        height: auto;
+        padding: 15px 0;
+    }
+
+    .main-nav {
+        margin-top: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .main-nav a {
+        margin: 5px 0;
+        width: 90%;
+        text-align: center;
+    }
+
+    /* --- Dashboard Summary Cards --- */
+    .summary-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* --- General Content and Forms --- */
+    .content-section {
+        padding: 15px;
+    }
+
+    .btn {
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+
+    /* --- User Tables --- */
+    .user-table thead {
+        display: none; /* Hide table headers */
+    }
+
+    .user-table, .user-table tbody, .user-table tr, .user-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .user-table tr {
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+    }
+
+    .user-table td {
+        text-align: right; /* Align content to the right */
+        padding-left: 50%; /* Create space for the label */
+        position: relative;
+        border-bottom: 1px solid #eee;
+    }
+
+    .user-table td:before {
+        content: attr(data-label); /* Use data-label for the heading */
+        position: absolute;
+        left: 10px;
+        width: calc(50% - 20px);
+        text-align: left;
+        font-weight: bold;
+    }
+
+    /* --- Action Buttons in Tables --- */
+    .user-actions a, .user-actions form {
+        display: block;
+        width: 100%;
+    }
+
+    .user-actions .btn {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}
+
+/* public/css/style.css */
+
+/* ADD THIS BLOCK TO THE END OF THE FILE */
+
+/* ====================================
+   Search Bar with Microphone Styling
+   ==================================== */
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-container input {
+    padding-right: 40px; /* Make space for the icon */
+}
+
+#mic-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em; /* Make the icon larger */
+    color: #888;
+    padding: 5px;
+}
+
+#mic-btn.is-listening {
+    color: var(--danger-color); /* Change color when listening */
+}
+
+.btn i {
+    margin-right: 8px;
+}
+
+/* public/css/style.css */
+
+/* ADD THIS BLOCK TO THE END OF THE FILE FOR UI POLISH */
+
+/* --- Refined Cards and Shadows --- */
+.content-section, .stat-card {
+    border-radius: 8px; /* Consistent rounded corners */
+    /* A softer, more modern shadow */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+}
+
+.stat-card:hover {
+    transform: translateY(-5px); /* Lift the card on hover */
+    box-shadow: 0 12px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Interactive Buttons --- */
+.btn {
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 500; /* Medium font weight from Poppins */
+}
+
+.btn:hover {
+    transform: translateY(-2px); /* Lift the button slightly */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Improved Form Inputs --- */
+.content-section input[type="text"],
+.content-section input[type="number"],
+.content-section input[type="password"],
+.content-section select {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.content-section input[type="text"]:focus,
+.content-section input[type="number"]:focus,
+.content-section input[type="password"]:focus,
+.content-section select:focus {
+    border-color: var(--primary-color);
+    /* A subtle glow effect on focus */
+    box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.2);
+    outline: none;
 }

@@ -1,3 +1,5 @@
+
+
 const mongoose = require('mongoose');
 const paginate = require('mongoose-paginate-v2');
 
@@ -9,7 +11,8 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     fixedFare: { type: Number, required: true },
-    isPaid: { type: Boolean, default: false }
+    // This is the only line that changed
+    balance: { type: Number, required: true, default: 0 }
 });
 
 userSchema.plugin(paginate);

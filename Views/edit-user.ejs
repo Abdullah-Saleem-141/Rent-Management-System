@@ -23,10 +23,10 @@
             <label for="fixedFare" class="required">Fixed Fare:</label>
             <input type="number" id="fixedFare" name="fixedFare" value="<%= user.fixedFare %>" required />
         </div>
-        <div class="form-group" style="flex-direction: row; align-items: center;">
-            <input type="checkbox" id="isPaid" name="isPaid" <%= user.isPaid ? 'checked' : '' %> />
-            <label for="isPaid" style="margin-left: 10px; margin-bottom: 0;">Is Paid</label>
-        </div>
+        <div class="form-group">
+    <label for="balance" class="required">Balance:</label>
+    <input type="number" id="balance" name="balance" value="<%= user.balance %>" required />
+</div>
         <button type="submit" class="btn">Update User</button>
     </form>
 </div>

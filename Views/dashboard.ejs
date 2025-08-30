@@ -18,12 +18,24 @@
 
 <div class="content-section">
     <h2>Record a Payment</h2>
+
+    <div class="search-container" style="margin-bottom: 20px;">
+        <input type="text" id="userSearchInput" onkeyup="filterUserDropdown()" placeholder="Type or use mic to search...">
+        <button id="mic-btn" title="Search with Voice"><i class="fas fa-microphone"></i></button>
+    </div>
+    
     <form action="/save-payment" method="post">
         <label for="userId">Select User:</label>
         <select name="userId" id="userId" required>
-            <% if (typeof users !== 'undefined') { %>
-                <% users.forEach(user => { %>
-                    <option value="<%= user._id %>" data-fare="<%= user.fixedFare %>"><%= user.name %> - <%= user.location.name %></option>
+            <% if (typeof locations !== 'undefined') { %>
+                <% locations.forEach(location => { %>
+                    <optgroup label="<%= location.name %>">
+                        <% location.users.forEach(user => { %>
+                            <option value="<%= user._id %>" data-fare="<%= user.fixedFare %>">
+                                <%= user.name %> <% if (user.balance > 0) { %> (Owes: <%= user.balance %>) <% } %>
+                            </option>
+                        <% }); %>
+                    </optgroup>
                 <% }); %>
             <% } %>
         </select>
@@ -35,18 +47,40 @@
     </form>
 </div>
 
-<div class="admin-actions">
-    <form action="/mark-all-unpaid" method="post" onsubmit="return confirm('Are you sure you want to mark ALL users as unpaid? This cannot be undone.');">
-        <button type="submit" class="btn btn-warning">Mark All Users as Unpaid</button>
-    </form>
-</div>
+
 
 <script>
+    function filterUserDropdown() {
+        const input = document.getElementById('userSearchInput');
+        const filter = input.value.toUpperCase();
+        const select = document.getElementById('userId');
+        const optgroups = select.getElementsByTagName('optgroup');
+
+        for (let i = 0; i < optgroups.length; i++) {
+            const options = optgroups[i].getElementsByTagName('option');
+            let groupHasVisibleOptions = false;
+            for (let j = 0; j < options.length; j++) {
+                const txtValue = options[j].textContent || options[j].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    options[j].style.display = "";
+                    groupHasVisibleOptions = true;
+                } else {
+                    options[j].style.display = "none";
+                }
+            }
+            if (groupHasVisibleOptions) {
+                optgroups[i].style.display = "";
+            } else {
+                optgroups[i].style.display = "none";
+            }
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Existing code for amount updater ---
         const userSelect = document.getElementById('userId');
         const amountInput = document.getElementById('amount');
 
-        // Function to update the amount based on the selected user
         function updateAmount() {
             const selectedOption = userSelect.options[userSelect.selectedIndex];
             if (selectedOption) {
@@ -56,12 +90,43 @@
                 }
             }
         }
-
-        // Add an event listener to the dropdown
         userSelect.addEventListener('change', updateAmount);
-
-        // Set the initial value when the page loads
         updateAmount();
+        
+        // --- Corrected code for voice search ---
+        const micBtn = document.getElementById('mic-btn');
+        const searchInput = document.getElementById('userSearchInput');
+
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() {
+                micBtn.classList.add('is-listening');
+                micBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            };
+
+            recognition.onend = function() {
+                micBtn.classList.remove('is-listening');
+                micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                searchInput.value = transcript;
+                filterUserDropdown();
+            };
+
+            micBtn.addEventListener('click', function() {
+                recognition.start();
+            });
+
+        } else {
+            micBtn.style.display = 'none';
+            console.log('Speech Recognition not supported in this browser.');
+        }
     });
 </script>
+
 <%- include('partials/footer') %>

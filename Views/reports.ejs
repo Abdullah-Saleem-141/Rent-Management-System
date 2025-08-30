@@ -1,54 +1,87 @@
-<%- include('partials/header', { title: 'Monthly Report', chartjs: true }) %>
+<%- include('partials/header', { title: title, chartjs: true }) %>
 <%- include('partials/messages') %>
 
-<div class="content-section">
-    <h2>Financial Overview</h2>
-    <div class="chart-container">
-        <canvas id="rentChart"></canvas>
+<div class="summary-container">
+    <div class="stat-card">
+        <h3>Collected This Month</h3>
+        <p><%= totalCollectedThisMonth %></p>
+    </div>
+    <div class="stat-card">
+        <h3>Total Outstanding</h3>
+        <p><%= totalOutstanding %></p>
     </div>
 </div>
 
 <div class="content-section">
-    <h3>Users Remaining to Pay <a href="/download-report" class="btn" style="float: right;">Download Report</a></h3>
-    <ul>
-        <% unpaidUsers.forEach(user => { %>
-            <li><%= user.name %> (<%= user.location.name %>) - Fare: <%= user.fixedFare %></li>
-        <% }); %>
-    </ul>
+    <h2>Historical Income (Last 12 Months)</h2>
+    <div class="chart-container" style="height: 400px; width: 100%; max-width: 900px;">
+        <canvas id="incomeChart"></canvas>
+    </div>
+</div>
+
+<div class="content-section">
+    <h3>Users with an Outstanding Balance</h3>
+    <a href="/download-report" class="btn" style="float: right; margin-bottom: 15px;">Download This List</a>
+
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Balance Due</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (unpaidUsers && unpaidUsers.length > 0) { %>
+                <% unpaidUsers.forEach(user => { %>
+                    <tr>
+                        <td data-label="Name"><%= user.name %></td>
+                        <td data-label="Location"><%= user.location.name %></td>
+                        <td data-label="Balance Due"><%= user.balance %></td>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="3" style="text-align: center;">All users are fully paid!</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
 </div>
 
 <script>
-    const ctx = document.getElementById('rentChart').getContext('2d');
-    const rentChart = new Chart(ctx, {
-        type: 'pie',
+    const ctx = document.getElementById('incomeChart').getContext('2d');
+    const incomeChart = new Chart(ctx, {
+        type: 'bar', // Bar chart for historical data
         data: {
-            labels: ['Collected', 'Outstanding'],
+            labels: <%- chartLabels %>,
             datasets: [{
-                label: 'Rent Status',
-                data: [<%= totalCollected %>, <%= totalUnpaid %>],
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.7)',
-                    'rgba(255, 99, 132, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(255, 99, 132, 1)'
-                ],
+                label: 'Total Rent Collected',
+                data: <%- chartData %>,
+                backgroundColor: 'rgba(42, 157, 143, 0.7)',
+                borderColor: 'rgba(42, 157, 143, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
             plugins: {
                 legend: {
-                    position: 'top',
+                    display: false
                 },
                 title: {
                     display: true,
-                    text: 'Monthly Rent Collection Status'
+                    text: 'Monthly Income'
                 }
             }
         }
     });
 </script>
+
 <%- include('partials/footer') %>
