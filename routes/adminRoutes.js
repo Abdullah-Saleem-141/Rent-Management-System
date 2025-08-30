@@ -30,19 +30,27 @@ router.get("/admins", async (req, res) => {
 // Handle adding a new admin
 router.post("/admins/add", async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const {
+            username,
+            password
+        } = req.body;
         if (!username || !password) {
             req.flash('error_msg', 'Username and password are required.');
             return res.redirect('/admins');
         }
 
-        const existingAdmin = await Admin.findOne({ username });
+        const existingAdmin = await Admin.findOne({
+            username
+        });
         if (existingAdmin) {
             req.flash('error_msg', 'An admin with that username already exists.');
             return res.redirect('/admins');
         }
 
-        const newAdmin = new Admin({ username, password });
+        const newAdmin = new Admin({
+            username,
+            password
+        });
         await newAdmin.save();
         req.flash('success_msg', 'New admin added successfully!');
         res.redirect('/admins');
@@ -56,12 +64,17 @@ router.post("/admins/add", async (req, res) => {
 // Handle deleting an admin
 router.post("/admins/delete/:id", async (req, res) => {
     try {
+        if (req.session.adminId === req.params.id) {
+            req.flash('error_msg', 'You cannot delete your own account.');
+            return res.redirect('/admins');
+        }
+
         const adminCount = await Admin.countDocuments();
         if (adminCount <= 1) {
             req.flash('error_msg', 'You cannot delete the last admin account.');
             return res.redirect('/admins');
         }
-        
+
         await Admin.findByIdAndDelete(req.params.id);
         req.flash('success_msg', 'Admin account deleted successfully!');
         res.redirect('/admins');
@@ -72,17 +85,24 @@ router.post("/admins/delete/:id", async (req, res) => {
     }
 });
 
+
 // Display the page for starting a new month
 router.get("/new-month", (req, res) => {
-    res.render('new-month', { title: 'Start New Billing Cycle' });
+    res.render('new-month', {
+        title: 'Start New Billing Cycle'
+    });
 });
 
 // Handle Option A: Carry Over Balances
 router.post("/new-month/carry-over", async (req, res) => {
     try {
-        await User.updateMany({}, [
-            { $set: { balance: { $add: ["$balance", "$fixedFare"] } } }
-        ]);
+        await User.updateMany({}, [{
+            $set: {
+                balance: {
+                    $add: ["$balance", "$fixedFare"]
+                }
+            }
+        }]);
         req.flash('success_msg', 'New month started! Balances have been carried over.');
         res.redirect('/dashboard');
     } catch (err) {
@@ -95,9 +115,11 @@ router.post("/new-month/carry-over", async (req, res) => {
 // Handle Option B: Forgive Balances
 router.post("/new-month/forgive", async (req, res) => {
     try {
-        await User.updateMany({}, [
-            { $set: { balance: "$fixedFare" } }
-        ]);
+        await User.updateMany({}, [{
+            $set: {
+                balance: "$fixedFare"
+            }
+        }]);
         req.flash('success_msg', 'New month started with a fresh start! All old balances have been forgiven.');
         res.redirect('/dashboard');
     } catch (err) {

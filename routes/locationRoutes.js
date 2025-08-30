@@ -46,9 +46,16 @@ router.post("/locations/add", async (req, res) => {
     }
 });
 
+
 // Handle deleting a location
 router.post("/locations/delete/:id", async (req, res) => {
     try {
+        const userCount = await User.countDocuments({ location: req.params.id });
+        if (userCount > 0) {
+            req.flash('error_msg', 'You cannot delete a location that has users assigned to it.');
+            return res.redirect('/locations');
+        }
+
         await Location.findByIdAndDelete(req.params.id);
         req.flash('success_msg', 'Location deleted successfully!');
         res.redirect('/locations');
@@ -58,5 +65,4 @@ router.post("/locations/delete/:id", async (req, res) => {
         res.redirect('/locations');
     }
 });
-
 module.exports = router;

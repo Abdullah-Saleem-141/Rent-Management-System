@@ -4,10 +4,14 @@
 <div class="content-section">
     <h2>Users in <%= location.name %> <a href="/add-user" class="btn" style="float: right;">Add New User</a></h2>
     
-    <div class="search-container">
-        <input type="text" id="userSearch" onkeyup="filterUsers()" placeholder="Type or use mic to search...">
-        <button id="mic-btn" title="Search with Voice"><i class="fas fa-microphone"></i></button>
-    </div>
+    // In Views/users-by-location.ejs
+
+<div class="search-container">
+    <form action="/users/location/<%= location._id %>" method="GET">
+        <input type="text" id="userSearch" name="search" placeholder="Type to search all users..." value="<%= typeof search !== 'undefined' ? search : '' %>">
+        <button type="submit" class="btn" style="width: auto;">Search</button>
+    </form>
+</div>
 
     <table class="user-table">
         <thead>

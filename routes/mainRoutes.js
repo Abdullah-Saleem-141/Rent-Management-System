@@ -18,21 +18,18 @@ router.use(authMiddleware);
 
 
 // Dashboard
-// New, more efficient code for your /dashboard route
+// In routes/mainRoutes.js
+
 router.get("/dashboard", authMiddleware, async (req, res) => {
     try {
-        // ... (other code like date calculations remains the same)
-
-        // 1. Fetch all locations and users in parallel
-        const [locations, users] = await Promise.all([
+        const [locations, users, payments] = await Promise.all([
             Location.find().sort({ name: 'asc' }).lean(),
-            User.find().sort({ name: 'asc' }).lean()
+            User.find().sort({ name: 'asc' }).lean(),
+            Payment.find({ date: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } }).lean()
         ]);
 
-        // 2. Create a map for easy lookup
         const locationsMap = new Map(locations.map(loc => [loc._id.toString(), { ...loc, users: [] }]));
 
-        // 3. Group users by their location
         users.forEach(user => {
             const userLocationId = user.location.toString();
             if (locationsMap.has(userLocationId)) {
@@ -40,18 +37,22 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
             }
         });
 
-        // 4. Sort users within each location (unpaid first)
         locationsMap.forEach(location => {
             location.users.sort((a, b) => a.balance - b.balance);
         });
 
         const finalLocations = Array.from(locationsMap.values());
 
-        // ... (rest of the dashboard logic for totalUsers, totalCollected, etc.)
+        const totalUsers = users.length;
+        const totalCollected = payments.reduce((sum, payment) => sum + payment.amount, 0);
+        const unpaidUsersCount = users.filter(user => user.balance > 0).length;
 
         res.render('dashboard', {
             locations: finalLocations,
-            // ... (pass other variables to the template)
+            totalUsers: totalUsers,
+            totalCollected: totalCollected,
+            unpaidUsersCount: unpaidUsersCount,
+            title: 'Dashboard'
         });
     } catch (err) {
         console.error(err);
@@ -95,16 +96,28 @@ router.get("/users", authMiddleware, async (req, res) => {
 });
 
 // Display users for a specific location
+// In routes/mainRoutes.js
+
+// Display users for a specific location
 router.get("/users/location/:id", authMiddleware, async (req, res) => {
     try {
         const locationId = req.params.id;
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
+        const searchQuery = req.query.search || '';
 
         const location = await Location.findById(locationId).lean();
         if (!location) {
             req.flash('error_msg', 'Location not found.');
             return res.redirect('/users');
+        }
+
+        // Build the query object
+        const query = {
+            location: locationId
+        };
+        if (searchQuery) {
+            query.name = new RegExp(searchQuery, 'i'); // Case-insensitive search
         }
 
         const options = {
@@ -115,12 +128,13 @@ router.get("/users/location/:id", authMiddleware, async (req, res) => {
             populate: 'location'
         };
 
-        const users = await User.paginate({ location: locationId }, options);
+        const users = await User.paginate(query, options);
 
         res.render('users-by-location', {
             users: users,
             location: location,
-            title: `Users in ${location.name}`
+            title: `Users in ${location.name}`,
+            search: searchQuery // Pass search query back to the view
         });
     } catch (err) {
         console.error(err);

@@ -33,7 +33,8 @@ router.post("/login", async (req, res) => {
         if (isMatch) {
             // Passwords match! Create the session.
             req.session.loggedIn = true;
-            req.session.username = admin.username; // Optional: store username in session
+            req.session.username = admin.username;
+            req.session.adminId = admin._id; // Optional: store username in session
 
             if (req.body.rememberMe) {
                 req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
