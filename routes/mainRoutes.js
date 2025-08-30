@@ -21,6 +21,7 @@ router.use(authMiddleware);
 
 // Dashboard
 router.get("/dashboard", authMiddleware, async (req, res) => {
+    console.log("Attempting to load the dashboard route...");
     try {
         const today = new Date();
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
