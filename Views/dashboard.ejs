@@ -77,7 +77,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // --- Existing code for amount updater ---
         const userSelect = document.getElementById('userId');
         const amountInput = document.getElementById('amount');
 
@@ -92,8 +91,7 @@
         }
         userSelect.addEventListener('change', updateAmount);
         updateAmount();
-        
-        // --- Corrected code for voice search ---
+
         const micBtn = document.getElementById('mic-btn');
         const searchInput = document.getElementById('userSearchInput');
 
@@ -115,7 +113,9 @@
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 searchInput.value = transcript;
-                filterUserDropdown();
+                // THIS IS THE NEW, MORE RELIABLE FIX:
+                // It simulates a key press to guarantee the search runs.
+                searchInput.dispatchEvent(new Event('keyup'));
             };
 
             micBtn.addEventListener('click', function() {

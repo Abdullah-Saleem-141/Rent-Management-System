@@ -680,3 +680,48 @@ input:invalid {
     box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.2);
     outline: none;
 }
+
+/* public/css/style.css */
+
+/* ADD THIS BLOCK TO THE END OF THE FILE FOR UI FIXES & COLOR */
+
+/* --- Fix for White Input Boxes --- */
+.content-section input[type="text"],
+.content-section input[type="number"],
+.content-section input[type="password"],
+.content-section select {
+    background-color: #fff; /* Ensure background is white */
+    border: 1px solid var(--border-color); /* Add a visible border */
+}
+
+/* --- Make Placeholder Text More Visible --- */
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #999;
+  opacity: 1; /* Firefox */
+}
+
+/* --- Add More Color and Attraction --- */
+/* Give the header a background color */
+.main-header {
+    background-color: var(--secondary-color);
+}
+
+/* Make header text white */
+.header-brand, .main-nav a {
+    color: #fff;
+}
+
+/* Style the main stat numbers on the dashboard */
+.stat-card p {
+    color: var(--primary-color);
+}
+
+/* Make the logout button pop a bit more */
+.main-nav a.btn-danger {
+    background-color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+.main-nav a.btn-danger:hover {
+    background-color: #fff;
+    color: var(--danger-color);
+}

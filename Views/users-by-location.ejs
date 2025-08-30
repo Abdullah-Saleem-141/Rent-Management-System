@@ -52,60 +52,60 @@
 </div>
 
 <script>
-// Function to filter the table
-function filterUsers() {
-    const input = document.getElementById('userSearch');
-    const filter = input.value.toUpperCase();
-    const table = document.querySelector('.user-table');
-    const tr = table.getElementsByTagName('tr');
-    for (let i = 1; i < tr.length; i++) {
-        const td = tr[i].getElementsByTagName("td")[0];
-        if (td) {
-            const txtValue = td.textContent || td.innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
+    // Function to filter the table
+    function filterUsers() {
+        const input = document.getElementById('userSearch');
+        const filter = input.value.toUpperCase();
+        const table = document.querySelector('.user-table');
+        const tr = table.getElementsByTagName('tr');
+        for (let i = 1; i < tr.length; i++) {
+            const td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+                const txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
             }
         }
     }
-}
 
-// Script for voice search
-document.addEventListener('DOMContentLoaded', function() {
-    const micBtn = document.getElementById('mic-btn');
-    const searchInput = document.getElementById('userSearch');
+    // Script for voice search
+    document.addEventListener('DOMContentLoaded', function() {
+        const micBtn = document.getElementById('mic-btn');
+        const searchInput = document.getElementById('userSearch');
 
-    if ('webkitSpeechRecognition' in window) {
-        const recognition = new webkitSpeechRecognition();
-        recognition.continuous = false;
-        recognition.lang = 'en-US';
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
 
-        recognition.onstart = function() {
-            micBtn.classList.add('is-listening');
-            micBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        };
+            recognition.onstart = function() {
+                micBtn.classList.add('is-listening');
+                micBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            };
 
-        recognition.onend = function() {
-            micBtn.classList.remove('is-listening');
-            micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-        };
+            recognition.onend = function() {
+                micBtn.classList.remove('is-listening');
+                micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            };
 
-        recognition.onresult = function(event) {
-            const transcript = event.results[0][0].transcript;
-            searchInput.value = transcript;
-            filterUsers(); // Trigger the table filter function
-        };
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                searchInput.value = transcript;
+                searchInput.dispatchEvent(new Event('keyup')); // Triggers the search
+            };
 
-        micBtn.addEventListener('click', function() {
-            recognition.start();
-        });
+            micBtn.addEventListener('click', function() {
+                recognition.start();
+            });
 
-    } else {
-        micBtn.style.display = 'none';
-        console.log('Speech Recognition not supported in this browser.');
-    }
-});
+        } else {
+            micBtn.style.display = 'none';
+            console.log('Speech Recognition not supported in this browser.');
+        }
+    });
 </script>
 
 <%- include('partials/footer') %>
