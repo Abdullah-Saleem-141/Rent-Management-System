@@ -47,8 +47,6 @@
     </form>
 </div>
 
-
-
 <script>
     function filterUserDropdown() {
         const input = document.getElementById('userSearchInput');
@@ -113,8 +111,6 @@
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 searchInput.value = transcript;
-                // THIS IS THE NEW, MORE RELIABLE FIX:
-                // It simulates a key press to guarantee the search runs.
                 searchInput.dispatchEvent(new Event('keyup'));
             };
 
