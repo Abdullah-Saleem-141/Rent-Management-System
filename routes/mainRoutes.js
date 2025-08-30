@@ -159,7 +159,7 @@ router.post("/delete-user/:id", authMiddleware, async (req, res) => {
         const { id } = req.params;
         await User.findByIdAndDelete(id);
         req.flash('success_msg', 'User deleted successfully!');
-        res.redirect('/users');
+        res.redirect('back');
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error deleting user." });
@@ -217,22 +217,26 @@ router.get("/payments/:id", authMiddleware, async (req, res) => {
 router.post("/delete-payment/:id", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        await Payment.findByIdAndDelete(id);
-        req.flash('success_msg', 'Payment deleted successfully!');
-        res.redirect('back');
+        const payment = await Payment.findById(id);
+
+        if (payment) {
+            await User.findByIdAndUpdate(payment.userId, { $inc: { balance: payment.amount } });
+            await Payment.findByIdAndDelete(id);
+            req.flash('success_msg', 'Payment deleted and user balance updated!');
+        } else {
+            req.flash('error_msg', 'Payment not found.');
+        }
+        
+        res.redirect('back'); 
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error deleting payment." });
     }
 });
 
-// Download unpaid users report
-// routes/mainRoutes.js
-
-// REPLACE the entire '/reports' route with this one
+// Reports Page
 router.get("/reports", authMiddleware, async (req, res) => {
     try {
-        // --- 1. Historical Monthly Income ---
         const monthlyIncome = await Payment.aggregate([
             {
                 $group: {
@@ -241,15 +245,13 @@ router.get("/reports", authMiddleware, async (req, res) => {
                 }
             },
             { $sort: { "_id.year": -1, "_id.month": -1 } },
-            { $limit: 12 } // Get the last 12 months
+            { $limit: 12 }
         ]);
 
-        // Format data for the chart
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const chartLabels = monthlyIncome.map(item => `${monthNames[item._id.month - 1]} ${item._id.year}`).reverse();
         const chartData = monthlyIncome.map(item => item.totalAmount).reverse();
 
-        // --- 2. Current Month's Data (for comparison) ---
         const today = new Date();
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -274,6 +276,37 @@ router.get("/reports", authMiddleware, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).render('error', { message: "Error fetching reports" });
+    }
+});
+
+// Download unpaid users report
+router.get("/download-report", authMiddleware, async (req, res) => {
+    try {
+        const unpaidUsers = await User.find({ balance: { $gt: 0 } }).populate('location').lean();
+
+        if (unpaidUsers.length === 0) {
+            req.flash('error_msg', 'There are no unpaid users to export.');
+            return res.redirect('/reports');
+        }
+
+        const formattedUsers = unpaidUsers.map(user => ({
+            Name: user.name,
+            Location: user.location ? user.location.name : 'N/A',
+            Balance: user.balance
+        }));
+
+        const fields = ['Name', 'Location', 'Balance'];
+        const opts = { fields };
+        const parser = new Parser(opts);
+        const csv = parser.parse(formattedUsers);
+
+        res.header('Content-Type', 'text/csv');
+        res.attachment('unpaid-users-report.csv');
+        res.send(csv);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).render('error', { message: "Error generating report" });
     }
 });
 
