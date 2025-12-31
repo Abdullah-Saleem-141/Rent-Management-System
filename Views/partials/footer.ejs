@@ -1,2 +1,16 @@
-</div> </body>
+</div> <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const navToggle = document.querySelector('.nav-toggle');
+        const mainNav = document.getElementById('mainNav');
+
+        if (navToggle && mainNav) {
+            navToggle.addEventListener('click', () => {
+                // This line shows or hides the menu
+                mainNav.classList.toggle('is-visible');
+            });
+        }
+    });
+</script>
+
+</body>
 </html>

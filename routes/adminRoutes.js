@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const Admin = require('../models/Admin');
-const User = require('../models/User'); // We need the User model for the new month logic
 
 // Middleware to ensure the user is logged in
 function authMiddleware(req, res, next) {
@@ -14,8 +12,9 @@ router.use(authMiddleware);
 
 // Display all admin accounts
 router.get("/admins", async (req, res) => {
+    const db = req.app.locals.db;
     try {
-        const admins = await Admin.find({}).lean();
+        const admins = await db.all("SELECT id, username FROM admins");
         res.render('admins', {
             admins: admins,
             title: 'Manage Admins'
@@ -27,55 +26,22 @@ router.get("/admins", async (req, res) => {
     }
 });
 
-// Handle adding a new admin
-router.post("/admins/add", async (req, res) => {
-    try {
-        const {
-            username,
-            password
-        } = req.body;
-        if (!username || !password) {
-            req.flash('error_msg', 'Username and password are required.');
-            return res.redirect('/admins');
-        }
-
-        const existingAdmin = await Admin.findOne({
-            username
-        });
-        if (existingAdmin) {
-            req.flash('error_msg', 'An admin with that username already exists.');
-            return res.redirect('/admins');
-        }
-
-        const newAdmin = new Admin({
-            username,
-            password
-        });
-        await newAdmin.save();
-        req.flash('success_msg', 'New admin added successfully!');
-        res.redirect('/admins');
-    } catch (err) {
-        console.error(err);
-        req.flash('error_msg', 'Error adding new admin.');
-        res.redirect('/admins');
-    }
-});
-
 // Handle deleting an admin
 router.post("/admins/delete/:id", async (req, res) => {
+    const db = req.app.locals.db;
     try {
-        if (req.session.adminId === req.params.id) {
+        if (req.session.adminId == req.params.id) {
             req.flash('error_msg', 'You cannot delete your own account.');
             return res.redirect('/admins');
         }
 
-        const adminCount = await Admin.countDocuments();
-        if (adminCount <= 1) {
+        const admins = await db.all("SELECT id FROM admins");
+        if (admins.length <= 1) {
             req.flash('error_msg', 'You cannot delete the last admin account.');
             return res.redirect('/admins');
         }
 
-        await Admin.findByIdAndDelete(req.params.id);
+        await db.run("DELETE FROM admins WHERE id = ?", [req.params.id]);
         req.flash('success_msg', 'Admin account deleted successfully!');
         res.redirect('/admins');
     } catch (err) {
@@ -85,7 +51,6 @@ router.post("/admins/delete/:id", async (req, res) => {
     }
 });
 
-
 // Display the page for starting a new month
 router.get("/new-month", (req, res) => {
     res.render('new-month', {
@@ -93,16 +58,11 @@ router.get("/new-month", (req, res) => {
     });
 });
 
-// Handle Option A: Carry Over Balances
+// Handle Option A: Carry Over Balances (New Balance = Current Balance + Fixed Fare)
 router.post("/new-month/carry-over", async (req, res) => {
+    const db = req.app.locals.db;
     try {
-        await User.updateMany({}, [{
-            $set: {
-                balance: {
-                    $add: ["$balance", "$fixedFare"]
-                }
-            }
-        }]);
+        await db.run("UPDATE users SET balance = balance + fixedFare");
         req.flash('success_msg', 'New month started! Balances have been carried over.');
         res.redirect('/dashboard');
     } catch (err) {
@@ -112,15 +72,12 @@ router.post("/new-month/carry-over", async (req, res) => {
     }
 });
 
-// Handle Option B: Forgive Balances
+// Handle Option B: Forgive Balances (New Balance = Fixed Fare)
 router.post("/new-month/forgive", async (req, res) => {
+    const db = req.app.locals.db;
     try {
-        await User.updateMany({}, [{
-            $set: {
-                balance: "$fixedFare"
-            }
-        }]);
-        req.flash('success_msg', 'New month started with a fresh start! All old balances have been forgiven.');
+        await db.run("UPDATE users SET balance = fixedFare");
+        req.flash('success_msg', 'New month started with a fresh start! All old balances forgiven.');
         res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
